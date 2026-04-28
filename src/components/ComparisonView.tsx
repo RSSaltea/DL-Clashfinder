@@ -1,5 +1,5 @@
 import { Cloud, Download, FileJson, RefreshCw, Trash2, Upload } from "lucide-react";
-import { ChangeEvent, useMemo, useState } from "react";
+import { ChangeEvent, KeyboardEvent, useMemo, useState } from "react";
 import { festivalDays } from "../data/lineup";
 import type { Artist, ClashDecisionMap, FestivalExport, IntentMap, ProfilePlan, SetTimeMap } from "../types";
 import { createExportPayload, downloadJson } from "../utils/export";
@@ -30,9 +30,11 @@ interface ComparisonViewProps {
   groupClashVotes: ClashDecisionMap;
   onGroupClashVoteChange: (clashId: string, artistId: string | undefined) => void;
   groupCode: string;
-  setGroupCode: (value: string) => void;
+  groupCodeDraft: string;
+  setGroupCodeDraft: (value: string) => void;
+  groupCodes: string[];
   groupSyncState: GroupSyncState;
-  onSyncGroup: () => void;
+  onSyncGroup: (groupCode?: string) => void;
 }
 
 interface GroupRow {
@@ -65,7 +67,9 @@ export const ComparisonView = ({
   groupClashVotes,
   onGroupClashVoteChange,
   groupCode,
-  setGroupCode,
+  groupCodeDraft,
+  setGroupCodeDraft,
+  groupCodes,
   groupSyncState,
   onSyncGroup,
 }: ComparisonViewProps) => {
@@ -194,6 +198,19 @@ export const ComparisonView = ({
     downloadJson(createExportPayload(profileName, intents, setTimes, personalClashDecisions, groupCode, groupClashVotes));
   };
 
+  const handleGroupSync = () => {
+    onSyncGroup(groupCodeDraft || groupCode);
+  };
+
+  const handleGroupCodeKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      handleGroupSync();
+    }
+  };
+
+  const hasDraftGroupCode = Boolean(groupCodeDraft || groupCode);
+  const draftNeedsApply = Boolean(groupCodeDraft && groupCodeDraft !== groupCode);
   const windowEndLabel = freeTimeWindow.end === "00:00" ? "Midnight" : freeTimeWindow.end;
 
   return (
@@ -203,7 +220,7 @@ export const ComparisonView = ({
           <p className="eyebrow">Share and decide together</p>
           <h1>Compare Plans</h1>
         </div>
-        <p className="muted">Type the same group code as your friends and plans sync automatically.</p>
+        <p className="muted">Type a group code, then press Enter or Sync now. It will not sync while you are still typing.</p>
       </section>
 
       <section className="compare-actions">
@@ -214,21 +231,43 @@ export const ComparisonView = ({
         <label className="text-field">
           <span>Group code</span>
           <input
-            value={groupCode}
+            value={groupCodeDraft}
             placeholder="e.g. download-crew"
-            onChange={(event) => setGroupCode(event.target.value)}
+            onChange={(event) => setGroupCodeDraft(event.target.value)}
+            onKeyDown={handleGroupCodeKeyDown}
           />
+          <small>
+            {groupCode
+              ? `Active: ${groupCode}${draftNeedsApply ? " - press Enter or Sync now to switch" : ""}`
+              : "Press Enter or Sync now to activate this group."}
+          </small>
         </label>
         <button
           className="secondary-button sync-button"
           type="button"
-          onClick={onSyncGroup}
-          disabled={!groupCode || groupSyncState.status === "syncing"}
+          onClick={handleGroupSync}
+          disabled={!hasDraftGroupCode || groupSyncState.status === "syncing"}
         >
           <RefreshCw size={18} />
-          {groupSyncState.status === "syncing" ? "Syncing" : "Sync now"}
+          {groupSyncState.status === "syncing" ? "Syncing" : draftNeedsApply ? "Switch & sync" : "Sync now"}
         </button>
       </section>
+
+      {groupCodes.length > 0 && (
+        <section className="group-code-list" aria-label="Saved group codes">
+          <span>Saved groups</span>
+          {groupCodes.map((code) => (
+            <button
+              key={code}
+              type="button"
+              className={code === groupCode ? "is-active" : ""}
+              onClick={() => onSyncGroup(code)}
+            >
+              {code}
+            </button>
+          ))}
+        </section>
+      )}
 
       <div className={`info-strip sync-strip sync-strip--${groupSyncState.status}`}>
         <span>{groupSyncState.message}</span>
@@ -365,7 +404,9 @@ export const ComparisonView = ({
                         })}
                       </div>
                       <div className="vote-result">
-                        {winner
+                        {!groupCode
+                          ? "Activate a group code before voting on group clashes."
+                          : winner
                           ? `${winner.name} is winning and will be used in the group itinerary.`
                           : voteSummary.isTie
                             ? "Tied vote - unresolved, so neither act is removed from the group itinerary yet."
@@ -380,6 +421,7 @@ export const ComparisonView = ({
                               key={artist.id}
                               type="button"
                               className={choiceButtonClass(selected)}
+                              disabled={!groupCode}
                               onClick={() => onGroupClashVoteChange(clash.id, selected ? undefined : artist.id)}
                             >
                               Vote {artist.name}
@@ -387,7 +429,12 @@ export const ComparisonView = ({
                           );
                         })}
                         {localVote && (
-                          <button type="button" className="choice-button" onClick={() => onGroupClashVoteChange(clash.id, undefined)}>
+                          <button
+                            type="button"
+                            className="choice-button"
+                            disabled={!groupCode}
+                            onClick={() => onGroupClashVoteChange(clash.id, undefined)}
+                          >
                             Clear vote
                           </button>
                         )}

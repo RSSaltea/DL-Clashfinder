@@ -649,6 +649,11 @@ p {
   padding: 0.45rem 0.65rem;
 }
 
+.choice-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.56;
+}
+
 .choice-button.is-active {
   border-color: rgba(117, 196, 111, 0.75);
   background: rgba(117, 196, 111, 0.16);
@@ -708,6 +713,40 @@ p {
 .text-field span {
   color: var(--muted);
   font-size: 0.82rem;
+}
+
+.text-field small {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.group-code-list {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: -0.35rem 0 1rem;
+}
+
+.group-code-list span {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.group-code-list button {
+  min-height: 2rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  cursor: pointer;
+  padding: 0.3rem 0.7rem;
+}
+
+.group-code-list button.is-active {
+  border-color: rgba(117, 196, 111, 0.55);
+  background: rgba(117, 196, 111, 0.12);
+  color: #d8ffd4;
 }
 
 .file-drop {

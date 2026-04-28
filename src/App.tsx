@@ -134,7 +134,9 @@ const AppRoutes = () => {
               groupClashVotes={festivalState.groupClashVotes}
               onGroupClashVoteChange={festivalState.setGroupClashVote}
               groupCode={festivalState.groupCode}
-              setGroupCode={festivalState.setGroupCode}
+              groupCodeDraft={festivalState.groupCodeDraft}
+              setGroupCodeDraft={festivalState.setGroupCodeDraft}
+              groupCodes={festivalState.groupCodes}
               groupSyncState={festivalState.groupSyncState}
               onSyncGroup={festivalState.syncGroupNow}
             />

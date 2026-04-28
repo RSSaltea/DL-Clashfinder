@@ -9,6 +9,7 @@ A better version of Clash Finder for Download Festival 2026 planning.
 - Edit set times in `src/data/lineup.ts` and detect clashes.
 - Sync everyone in the same group code through Supabase, without import/export.
 - Vote on group clashes separately from your personal Clash choices.
+- Switch between multiple group codes while keeping each group's clash votes separate.
 - Export/import JSON as an optional backup.
 - Open an artist page for every act.
 - View static Spotify embeds for each artist's top tracks.
@@ -87,6 +88,8 @@ VITE_SUPABASE_ANON_KEY=your-anon-key
 Anyone using the same group code, for example `raffo-crew`, will appear in Compare and Group Itinerary automatically. No JSON import/export is needed once Supabase is configured. Group codes are for convenience, not privacy, so only share codes with people you trust.
 
 Compare clash votes are separate from the personal Clashes tab. The act with the most group votes is used in Group Itinerary; tied votes stay unresolved until one side leads.
+
+The group code field only activates when Enter or Sync now is pressed, so half-typed codes are not sent to Supabase. Saved group codes can be switched from the Compare page, and each group keeps its own local clash votes.
 
 ## GitHub Pages
 

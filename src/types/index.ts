@@ -40,6 +40,8 @@ export type SetTimeMap = Record<string, ArtistSetTime>;
 
 export type ClashDecisionMap = Record<string, string>;
 
+export type GroupClashVoteMap = Record<string, ClashDecisionMap>;
+
 export interface ProfilePlan {
   id: string;
   name: string;

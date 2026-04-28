@@ -1,4 +1,4 @@
-import type { ClashDecisionMap, FestivalExport, Intent, IntentMap } from "../types";
+import type { ClashDecisionMap, FestivalExport, GroupClashVoteMap, Intent, IntentMap } from "../types";
 
 const storageKeys = {
   intents: "download-clash-finder:intents",
@@ -7,7 +7,9 @@ const storageKeys = {
   freeTimeWindow: "download-clash-finder:free-time-window",
   clashDecisions: "download-clash-finder:clash-decisions",
   groupClashVotes: "download-clash-finder:group-clash-votes",
+  groupClashVotesByCode: "download-clash-finder:group-clash-votes-by-code",
   groupCode: "download-clash-finder:group-code",
+  groupCodes: "download-clash-finder:group-codes",
   groupMemberId: "download-clash-finder:group-member-id",
 };
 
@@ -58,11 +60,48 @@ export const saveGroupClashVotes = (value: ClashDecisionMap) => {
   window.localStorage.setItem(storageKeys.groupClashVotes, JSON.stringify(value));
 };
 
+export const loadGroupClashVotesByCode = (
+  activeGroupCode = "",
+  legacyVotes: ClashDecisionMap = {},
+): GroupClashVoteMap => {
+  const saved = parseJson<GroupClashVoteMap>(
+    window.localStorage.getItem(storageKeys.groupClashVotesByCode),
+    {},
+  );
+
+  if (Object.keys(saved).length > 0 || !activeGroupCode || Object.keys(legacyVotes).length === 0) {
+    return saved;
+  }
+
+  return {
+    [activeGroupCode]: legacyVotes,
+  };
+};
+
+export const saveGroupClashVotesByCode = (value: GroupClashVoteMap) => {
+  window.localStorage.setItem(storageKeys.groupClashVotesByCode, JSON.stringify(value));
+};
+
 export const loadGroupCode = () =>
   window.localStorage.getItem(storageKeys.groupCode) ?? "";
 
 export const saveGroupCode = (value: string) => {
   window.localStorage.setItem(storageKeys.groupCode, value.trim());
+};
+
+export const loadGroupCodes = (activeGroupCode = "") => {
+  const saved = parseJson<string[]>(window.localStorage.getItem(storageKeys.groupCodes), []);
+  const codes = new Set(saved.filter(Boolean));
+
+  if (activeGroupCode) {
+    codes.add(activeGroupCode);
+  }
+
+  return Array.from(codes);
+};
+
+export const saveGroupCodes = (value: string[]) => {
+  window.localStorage.setItem(storageKeys.groupCodes, JSON.stringify(Array.from(new Set(value.filter(Boolean)))));
 };
 
 const createGroupMemberId = () => {

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { ClashDecisionMap, FestivalExport, Intent, IntentMap, SetTimeMap } from "../types";
+import type { ClashDecisionMap, FestivalExport, GroupClashVoteMap, Intent, IntentMap, SetTimeMap } from "../types";
 import { createExportPayload } from "../utils/export";
 import {
   type GroupSyncState,
@@ -12,14 +12,18 @@ import {
   getNextIntent,
   loadClashDecisions,
   loadGroupCode,
+  loadGroupCodes,
   loadGroupClashVotes,
+  loadGroupClashVotesByCode,
   loadGroupMemberId,
   loadImports,
   loadIntentMap,
   loadProfileName,
   saveClashDecisions,
   saveGroupCode,
+  saveGroupCodes,
   saveGroupClashVotes,
+  saveGroupClashVotesByCode,
   saveImports,
   saveIntentMap,
   saveProfileName,
@@ -44,13 +48,21 @@ export const useFestivalState = () => {
   const [imports, setImportsState] = useState<FestivalExport[]>(() => loadImports());
   const [syncedImports, setSyncedImports] = useState<FestivalExport[]>([]);
   const [clashDecisions, setClashDecisions] = useState<ClashDecisionMap>(() => loadClashDecisions());
-  const [groupClashVotes, setGroupClashVotes] = useState<ClashDecisionMap>(() => loadGroupClashVotes());
   const [groupCode, setGroupCodeState] = useState(() => loadGroupCode());
+  const [groupCodeDraft, setGroupCodeDraftState] = useState(() => loadGroupCode());
+  const [groupCodes, setGroupCodes] = useState<string[]>(() => loadGroupCodes(loadGroupCode()));
+  const [groupClashVotesByCode, setGroupClashVotesByCode] = useState<GroupClashVoteMap>(() =>
+    loadGroupClashVotesByCode(loadGroupCode(), loadGroupClashVotes()),
+  );
   const [groupSyncState, setGroupSyncState] = useState<GroupSyncState>(() => getInitialGroupSyncState());
   const groupMemberId = useMemo(() => loadGroupMemberId(), []);
   const syncConfigured = useMemo(() => isGroupSyncConfigured(), []);
   const activeGroupCodeRef = useRef(normaliseGroupCode(groupCode));
   const setTimes = useMemo<SetTimeMap>(() => ({}), []);
+  const groupClashVotes = useMemo(
+    () => (groupCode ? groupClashVotesByCode[groupCode] ?? {} : {}),
+    [groupClashVotesByCode, groupCode],
+  );
 
   useEffect(() => {
     activeGroupCodeRef.current = normaliseGroupCode(groupCode);
@@ -73,12 +85,17 @@ export const useFestivalState = () => {
   }, [clashDecisions]);
 
   useEffect(() => {
+    saveGroupClashVotesByCode(groupClashVotesByCode);
     saveGroupClashVotes(groupClashVotes);
-  }, [groupClashVotes]);
+  }, [groupClashVotes, groupClashVotesByCode]);
 
   useEffect(() => {
     saveGroupCode(groupCode);
   }, [groupCode]);
+
+  useEffect(() => {
+    saveGroupCodes(groupCodes);
+  }, [groupCodes]);
 
   const selectedArtistIds = useMemo(() => new Set(Object.keys(intents)), [intents]);
 
@@ -120,25 +137,54 @@ export const useFestivalState = () => {
   };
 
   const setGroupClashVote = (clashId: string, artistId: string | undefined) => {
-    setGroupClashVotes((current) => {
-      const next = { ...current };
+    if (!groupCode) {
+      return;
+    }
+
+    setGroupClashVotesByCode((current) => {
+      const nextVotes = { ...(current[groupCode] ?? {}) };
 
       if (artistId) {
-        next[clashId] = artistId;
+        nextVotes[clashId] = artistId;
       } else {
-        delete next[clashId];
+        delete nextVotes[clashId];
       }
 
-      return next;
+      return {
+        ...current,
+        [groupCode]: nextVotes,
+      };
     });
   };
 
-  const setGroupCode = (value: string) => {
-    setGroupCodeState(normaliseGroupCode(value));
+  const setGroupCodeDraft = (value: string) => {
+    setGroupCodeDraftState(normaliseGroupCode(value));
   };
 
-  const syncGroupNow = useCallback(async () => {
-    const currentGroupCode = normaliseGroupCode(groupCode);
+  const rememberGroupCode = (value: string) => {
+    if (!value) {
+      return;
+    }
+
+    setGroupCodes((current) => [value, ...current.filter((code) => code !== value)]);
+  };
+
+  const activateGroupCode = (value: string) => {
+    const nextGroupCode = normaliseGroupCode(value);
+
+    setGroupCodeDraftState(nextGroupCode);
+    setSyncedImports([]);
+    setGroupCodeState(nextGroupCode);
+    activeGroupCodeRef.current = nextGroupCode;
+    rememberGroupCode(nextGroupCode);
+
+    return nextGroupCode;
+  };
+
+  const syncGroupNow = useCallback(async (requestedGroupCode?: string) => {
+    const currentGroupCode = requestedGroupCode === undefined
+      ? normaliseGroupCode(groupCode)
+      : activateGroupCode(requestedGroupCode);
 
     if (!currentGroupCode) {
       setSyncedImports([]);
@@ -172,13 +218,14 @@ export const useFestivalState = () => {
     }));
 
     try {
+      const votesForGroup = groupClashVotesByCode[currentGroupCode] ?? {};
       const payload = createExportPayload(
         profileName,
         intents,
         setTimes,
         clashDecisions,
         currentGroupCode,
-        groupClashVotes,
+        votesForGroup,
       );
 
       await pushGroupPlan(currentGroupCode, groupMemberId, payload);
@@ -215,7 +262,7 @@ export const useFestivalState = () => {
   }, [
     clashDecisions,
     groupCode,
-    groupClashVotes,
+    groupClashVotesByCode,
     groupMemberId,
     intents,
     profileName,
@@ -264,7 +311,10 @@ export const useFestivalState = () => {
     setTimes,
     profileName,
     groupCode,
-    setGroupCode,
+    groupCodeDraft,
+    setGroupCodeDraft,
+    groupCodes,
+    activateGroupCode,
     syncedImports,
     groupSyncState,
     syncGroupNow,

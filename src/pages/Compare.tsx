@@ -15,9 +15,11 @@ interface CompareProps {
   groupClashVotes: ClashDecisionMap;
   onGroupClashVoteChange: (clashId: string, artistId: string | undefined) => void;
   groupCode: string;
-  setGroupCode: (value: string) => void;
+  groupCodeDraft: string;
+  setGroupCodeDraft: (value: string) => void;
+  groupCodes: string[];
   groupSyncState: GroupSyncState;
-  onSyncGroup: () => void;
+  onSyncGroup: (groupCode?: string) => void;
 }
 
 export const Compare = (props: CompareProps) => <ComparisonView {...props} />;
