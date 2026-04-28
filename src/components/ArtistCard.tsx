@@ -2,7 +2,6 @@ import { AlertTriangle, ExternalLink } from "lucide-react";
 import { Link } from "react-router-dom";
 import type { Artist, ArtistSetTime, Intent } from "../types";
 import { formatTimeRange } from "../utils/time";
-import { ArtistLogo } from "./ArtistLogo";
 import { IntentButtons } from "./IntentButtons";
 import { SetTimeInput } from "./SetTimeInput";
 
@@ -29,15 +28,8 @@ export const ArtistCard = ({
     <article className={`artist-card stage-${artist.stage} ${intent ? "is-selected" : ""}`}>
       <div className="artist-card__top">
         <div className="artist-card__identity">
-          <Link
-            aria-label={`Open ${artist.name}`}
-            className="artist-link artist-logo-link"
-            data-artist-name={artist.name}
-            title={artist.name}
-            to={`/artist/${artist.id}`}
-          >
-            <ArtistLogo artistId={artist.id} artistName={artist.name} searchName={artist.logoSearchName} />
-            <span className="artist-name-text">{artist.name}</span>
+          <Link className="artist-link" to={`/artist/${artist.id}`}>
+            {artist.name}
             <ExternalLink size={15} aria-hidden="true" />
           </Link>
         </div>
