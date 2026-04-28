@@ -1,4 +1,4 @@
-import { AlertTriangle, CalendarDays, ExternalLink, UsersRound } from "lucide-react";
+import { AlertTriangle, CalendarDays, ExternalLink, Timer, UsersRound } from "lucide-react";
 import { useEffect, useState } from "react";
 import { HashRouter, NavLink, Route, Routes, useLocation } from "react-router-dom";
 import { festival } from "./data/lineup";
@@ -6,6 +6,7 @@ import { useFestivalState } from "./hooks/useFestivalState";
 import { ArtistDetail } from "./pages/ArtistDetail";
 import { Clashes } from "./pages/Clashes";
 import { Compare } from "./pages/Compare";
+import { FreeTime } from "./pages/FreeTime";
 import { Home } from "./pages/Home";
 import { completeSpotifyLoginIfNeeded } from "./utils/spotify";
 
@@ -54,6 +55,10 @@ const AppRoutes = () => {
             <CalendarDays size={18} />
             <span>Lineup</span>
           </NavLink>
+          <NavLink to="/free-time">
+            <Timer size={18} />
+            <span>Free Time</span>
+          </NavLink>
           <NavLink to="/clashes">
             <AlertTriangle size={18} />
             <span>Clashes</span>
@@ -89,6 +94,16 @@ const AppRoutes = () => {
           }
         />
         <Route
+          path="/free-time"
+          element={
+            <FreeTime
+              intents={festivalState.intents}
+              setTimes={festivalState.setTimes}
+              onIntentChange={festivalState.setArtistIntent}
+            />
+          }
+        />
+        <Route
           path="/clashes"
           element={<Clashes intents={festivalState.intents} setTimes={festivalState.setTimes} />}
         />
@@ -100,6 +115,9 @@ const AppRoutes = () => {
               profileName={festivalState.profileName}
               setProfileName={festivalState.setProfileName}
               setTimes={festivalState.setTimes}
+              imports={festivalState.imports}
+              onAddImports={festivalState.addImports}
+              onRemoveImport={festivalState.removeImport}
             />
           }
         />

@@ -4,13 +4,17 @@ import { artistById, festivalDays, getStage, lineup } from "../data/lineup";
 import type { Artist, FestivalExport, IntentMap, SetTimeMap } from "../types";
 import { createExportPayload, downloadJson } from "../utils/export";
 import { parseImportedPlan } from "../utils/import";
-import { getOverlapRange, getEffectiveTime } from "../utils/time";
+import { loadFreeTimeWindow } from "../utils/localStorage";
+import { computeFreeGaps, formatDuration, getEffectiveTime, getOverlapRange, minutesToTime, timeToMinutes, windowEndToMins } from "../utils/time";
 
 interface ComparisonViewProps {
   intents: IntentMap;
   profileName: string;
   setProfileName: (value: string) => void;
   setTimes: SetTimeMap;
+  imports: FestivalExport[];
+  onAddImports: (newImports: FestivalExport[]) => void;
+  onRemoveImport: (index: number) => void;
 }
 
 interface ProfilePlan {
@@ -36,9 +40,15 @@ export const ComparisonView = ({
   profileName,
   setProfileName,
   setTimes,
+  imports,
+  onAddImports,
+  onRemoveImport,
 }: ComparisonViewProps) => {
-  const [imports, setImports] = useState<FestivalExport[]>([]);
   const [error, setError] = useState("");
+
+  const freeTimeWindow = useMemo(() => loadFreeTimeWindow(), []);
+  const windowStartMins = timeToMinutes(freeTimeWindow.start) ?? 600;
+  const windowEndMins = windowEndToMins(freeTimeWindow.end);
 
   const profiles = useMemo<ProfilePlan[]>(() => [
     { id: "local", name: profileName || "Me", intents, setTimes },
@@ -146,13 +156,42 @@ export const ComparisonView = ({
     return clashes.slice(0, 40);
   }, [combinedSetTimes, groupRows]);
 
+  const groupFreeTimeData = useMemo(() => {
+    return festivalDays.map((day) => {
+      const allGroupArtists = profiles.flatMap((profile) =>
+        lineup.filter((artist) => artist.day === day.id && Boolean(profile.intents[artist.id])),
+      );
+      const uniqueGroupArtists = Array.from(new Map(allGroupArtists.map((a) => [a.id, a])).values());
+
+      const gaps = computeFreeGaps(uniqueGroupArtists, combinedSetTimes, windowStartMins, windowEndMins);
+
+      const allGroupIds = new Set(uniqueGroupArtists.map((a) => a.id));
+
+      const gapsWithPlaying = gaps.map((gap) => {
+        const playing = lineup.filter((artist) => {
+          if (artist.day !== day.id) return false;
+          if (allGroupIds.has(artist.id)) return false;
+          const t = getEffectiveTime(artist, combinedSetTimes);
+          const start = timeToMinutes(t.start);
+          const end = timeToMinutes(t.end);
+          if (start === undefined || end === undefined) return false;
+          return start < gap.end && end > gap.start;
+        });
+
+        return { ...gap, playing };
+      });
+
+      return { day, gaps: gapsWithPlaying };
+    });
+  }, [profiles, combinedSetTimes, windowStartMins, windowEndMins]);
+
   const handleImport = async (event: ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files ?? []);
     setError("");
 
     try {
       const parsed = await Promise.all(files.map(parseImportedPlan));
-      setImports((current) => [...current, ...parsed]);
+      onAddImports(parsed);
     } catch (importError) {
       setError(importError instanceof Error ? importError.message : "Import failed.");
     } finally {
@@ -163,6 +202,8 @@ export const ComparisonView = ({
   const handleExport = () => {
     downloadJson(createExportPayload(profileName, intents, setTimes));
   };
+
+  const windowEndLabel = freeTimeWindow.end === "00:00" ? "Midnight" : freeTimeWindow.end;
 
   return (
     <main className="page-shell">
@@ -200,7 +241,7 @@ export const ComparisonView = ({
               <button
                 type="button"
                 title={`Remove ${item.profileName}`}
-                onClick={() => setImports((current) => current.filter((_, itemIndex) => itemIndex !== index))}
+                onClick={() => onRemoveImport(index)}
               >
                 <Trash2 size={15} />
               </button>
@@ -274,6 +315,68 @@ export const ComparisonView = ({
               </article>
             ))}
           </div>
+        )}
+      </section>
+
+      <section className="day-group">
+        <div className="day-heading">
+          <h2>Group Free Time</h2>
+          <span>{freeTimeWindow.start} – {windowEndLabel}</span>
+        </div>
+        <p className="muted" style={{ fontSize: "0.9rem" }}>
+          Periods where nobody in the group has anyone playing. Adjust the window on the Free Time page.
+        </p>
+
+        {groupFreeTimeData.every((d) => d.gaps.length === 0) && groupRows.length === 0 ? (
+          <div className="empty-state">
+            <p>Import friend plans and mark artists to see group free time.</p>
+          </div>
+        ) : (
+          groupFreeTimeData.map(({ day, gaps }) => (
+            <div className="day-group" key={day.id} style={{ marginTop: "0.5rem" }}>
+              <div className="day-heading">
+                <h3 style={{ fontSize: "1.1rem" }}>{day.label}</h3>
+                <span>{gaps.length} gap{gaps.length !== 1 ? "s" : ""}</span>
+              </div>
+
+              {gaps.length === 0 ? (
+                <div className="empty-state tight">
+                  <p className="muted">Someone in the group is always busy on this day.</p>
+                </div>
+              ) : (
+                <div className="gap-list">
+                  {gaps.map((gap) => {
+                    const endLabel = gap.end === 1440 ? "00:00" : minutesToTime(gap.end);
+                    const duration = formatDuration(gap.end - gap.start);
+
+                    return (
+                      <div className="gap-card" key={`${gap.start}-${gap.end}`}>
+                        <div className="gap-card__header">
+                          <strong>{minutesToTime(gap.start)} – {endLabel}</strong>
+                          <span>{duration} free</span>
+                        </div>
+                        {gap.playing.length === 0 ? (
+                          <p className="muted" style={{ fontSize: "0.9rem" }}>Nobody else playing during this gap.</p>
+                        ) : (
+                          <div className="compact-list">
+                            {gap.playing.map((artist) => {
+                              const t = getEffectiveTime(artist, combinedSetTimes);
+                              return (
+                                <div key={artist.id}>
+                                  <strong>{artist.name}</strong>
+                                  <span>{getStage(artist.stage)?.shortName} · {t.start}–{t.end}</span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          ))
         )}
       </section>
     </main>

@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import type { Intent, IntentMap, SetTimeMap } from "../types";
+import type { FestivalExport, Intent, IntentMap, SetTimeMap } from "../types";
 import {
   getNextIntent,
+  loadImports,
   loadIntentMap,
   loadProfileName,
+  saveImports,
   saveIntentMap,
   saveProfileName,
 } from "../utils/localStorage";
@@ -11,6 +13,7 @@ import {
 export const useFestivalState = () => {
   const [intents, setIntents] = useState<IntentMap>(() => loadIntentMap());
   const [profileName, setProfileNameState] = useState(() => loadProfileName());
+  const [imports, setImportsState] = useState<FestivalExport[]>(() => loadImports());
   const setTimes = useMemo<SetTimeMap>(() => ({}), []);
 
   useEffect(() => {
@@ -20,6 +23,10 @@ export const useFestivalState = () => {
   useEffect(() => {
     saveProfileName(profileName);
   }, [profileName]);
+
+  useEffect(() => {
+    saveImports(imports);
+  }, [imports]);
 
   const selectedArtistIds = useMemo(() => new Set(Object.keys(intents)), [intents]);
 
@@ -38,6 +45,14 @@ export const useFestivalState = () => {
     });
   };
 
+  const addImports = (newImports: FestivalExport[]) => {
+    setImportsState((current) => [...current, ...newImports]);
+  };
+
+  const removeImport = (index: number) => {
+    setImportsState((current) => current.filter((_, i) => i !== index));
+  };
+
   return {
     intents,
     selectedArtistIds,
@@ -46,5 +61,8 @@ export const useFestivalState = () => {
     setProfileName: setProfileNameState,
     setTimes,
     profileName,
+    imports,
+    addImports,
+    removeImport,
   };
 };

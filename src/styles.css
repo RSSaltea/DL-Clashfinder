@@ -847,6 +847,38 @@ p {
   border-radius: 12px;
 }
 
+.gap-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.gap-card {
+  display: grid;
+  gap: 0.8rem;
+  padding: 1rem;
+  border: 1px solid rgba(40, 190, 179, 0.2);
+  border-radius: 8px;
+  background: rgba(20, 25, 29, 0.75);
+}
+
+.gap-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.gap-card__header strong {
+  font-size: 1.05rem;
+  color: var(--teal);
+}
+
+.gap-card__header span {
+  color: var(--muted);
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
 .app-footer {
   display: flex;
   align-items: center;
@@ -879,7 +911,7 @@ p {
 
   .app-nav {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   .app-nav a {
