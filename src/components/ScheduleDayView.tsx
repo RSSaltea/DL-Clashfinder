@@ -73,7 +73,7 @@ export const ScheduleDayView = ({ schedule, showSupporters = false }: ScheduleDa
                   <div>
                     <h3>{item.artist.name}</h3>
                     <p>
-                      {getStageLabel(item.artist)}
+                      {getStageLabel(item.artist)} - starts {minutesToTime(item.start)} - finishes {minutesToTime(item.end)}
                       {showSupporters && supporters ? ` - picked by ${supporters}` : ""}
                     </p>
                   </div>
@@ -94,29 +94,17 @@ export const ScheduleDayView = ({ schedule, showSupporters = false }: ScheduleDa
                       <p>
                         <span>Finishing</span>
                         <strong>{gap.comingFrom.artist.name}</strong>
-                        <em>{getStageLabel(gap.comingFrom.artist)}</em>
+                        <em>{getStageLabel(gap.comingFrom.artist)} - ends {minutesToTime(gap.start)}</em>
                       </p>
                     )}
                     {gap.goingTo && (
                       <p>
                         <span>Heading to</span>
                         <strong>{gap.goingTo.artist.name}</strong>
-                        <em>{getStageLabel(gap.goingTo.artist)}</em>
+                        <em>{getStageLabel(gap.goingTo.artist)} - starts {minutesToTime(gap.end)}</em>
                       </p>
                     )}
                   </div>
-                  {gap.playing.length > 0 ? (
-                    <div className="compact-list">
-                      {gap.playing.slice(0, 8).map(({ artist, start, end }) => (
-                        <div key={artist.id}>
-                          <strong>{artist.name}</strong>
-                          <span>{getStageLabel(artist)} - {minutesToTime(start)} to {minutesToTime(end)}</span>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="muted">Nobody else is playing during this gap.</p>
-                  )}
                 </div>
               </article>
             );
