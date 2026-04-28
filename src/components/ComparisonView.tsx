@@ -1,8 +1,9 @@
-import { Download, FileJson, Trash2, Upload } from "lucide-react";
+import { Cloud, Download, FileJson, RefreshCw, Trash2, Upload } from "lucide-react";
 import { ChangeEvent, useMemo, useState } from "react";
 import { festivalDays } from "../data/lineup";
 import type { Artist, ClashDecisionMap, FestivalExport, IntentMap, ProfilePlan, SetTimeMap } from "../types";
 import { createExportPayload, downloadJson } from "../utils/export";
+import type { GroupSyncState } from "../utils/groupSync";
 import { parseImportedPlan } from "../utils/import";
 import { loadFreeTimeWindow } from "../utils/localStorage";
 import {
@@ -21,12 +22,15 @@ interface ComparisonViewProps {
   setProfileName: (value: string) => void;
   setTimes: SetTimeMap;
   imports: FestivalExport[];
+  syncedImports: FestivalExport[];
   onAddImports: (newImports: FestivalExport[]) => void;
   onRemoveImport: (index: number) => void;
   clashDecisions: ClashDecisionMap;
   onClashDecisionChange: (clashId: string, artistId: string | undefined) => void;
   groupCode: string;
   setGroupCode: (value: string) => void;
+  groupSyncState: GroupSyncState;
+  onSyncGroup: () => void;
 }
 
 interface GroupRow {
@@ -52,12 +56,15 @@ export const ComparisonView = ({
   setProfileName,
   setTimes,
   imports,
+  syncedImports,
   onAddImports,
   onRemoveImport,
   clashDecisions,
   onClashDecisionChange,
   groupCode,
   setGroupCode,
+  groupSyncState,
+  onSyncGroup,
 }: ComparisonViewProps) => {
   const [error, setError] = useState("");
 
@@ -68,8 +75,16 @@ export const ComparisonView = ({
   const profiles = useMemo<ProfilePlan[]>(
     () => [
       { id: "local", name: profileName || "Me", intents, setTimes, clashDecisions, groupCode },
+      ...syncedImports.map((item, index) => ({
+        id: `synced-${item.profileName}-${index}`,
+        name: item.profileName,
+        intents: item.intents,
+        setTimes: item.setTimes,
+        clashDecisions: item.clashDecisions,
+        groupCode: item.groupCode,
+      })),
       ...imports.map((item, index) => ({
-        id: `${item.profileName}-${index}`,
+        id: `imported-${item.profileName}-${index}`,
         name: item.profileName,
         intents: item.intents,
         setTimes: item.setTimes,
@@ -77,7 +92,7 @@ export const ComparisonView = ({
         groupCode: item.groupCode,
       })),
     ],
-    [clashDecisions, groupCode, imports, intents, profileName, setTimes],
+    [clashDecisions, groupCode, imports, intents, profileName, setTimes, syncedImports],
   );
 
   const combinedSetTimes = useMemo(
@@ -202,18 +217,41 @@ export const ComparisonView = ({
           <span>Import friend JSON</span>
           <input type="file" accept="application/json,.json" multiple onChange={handleImport} />
         </label>
+        <button
+          className="secondary-button sync-button"
+          type="button"
+          onClick={onSyncGroup}
+          disabled={!groupCode || groupSyncState.status === "syncing"}
+        >
+          <RefreshCw size={18} />
+          {groupSyncState.status === "syncing" ? "Syncing" : "Sync now"}
+        </button>
       </section>
 
-      <div className="info-strip">
-        Group code is saved into exports so you can keep plans labelled together. Automatic shared syncing needs a small backend, because GitHub Pages cannot store everyone&apos;s plans by itself.
+      <div className={`info-strip sync-strip sync-strip--${groupSyncState.status}`}>
+        <span>{groupSyncState.message}</span>
+        {groupSyncState.lastSyncedAt && (
+          <span>
+            Last sync {new Date(groupSyncState.lastSyncedAt).toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
+          </span>
+        )}
       </div>
 
       {error && <div className="error-banner">{error}</div>}
 
-      {imports.length > 0 && (
-        <section className="import-list" aria-label="Imported plans">
+      {(syncedImports.length > 0 || imports.length > 0) && (
+        <section className="import-list" aria-label="Shared and imported plans">
+          {syncedImports.map((item, index) => (
+            <div className="import-pill sync-pill" key={`synced-${item.profileName}-${item.exportedAt}-${index}`}>
+              <Cloud size={16} />
+              <span>{item.profileName}{item.groupCode ? ` - ${item.groupCode}` : ""} - synced</span>
+            </div>
+          ))}
           {imports.map((item, index) => (
-            <div className="import-pill" key={`${item.profileName}-${item.exportedAt}`}>
+            <div className="import-pill" key={`imported-${item.profileName}-${item.exportedAt}-${index}`}>
               <FileJson size={16} />
               <span>{item.profileName}{item.groupCode ? ` - ${item.groupCode}` : ""}</span>
               <button
@@ -276,7 +314,7 @@ export const ComparisonView = ({
         {groupClashes.length === 0 ? (
           <div className="empty-state">
             <h2>No shared clashes yet.</h2>
-            <p>Import another plan or pick overlapping artists to compare decisions.</p>
+            <p>Sync a group code, import another plan, or pick overlapping artists to compare decisions.</p>
           </div>
         ) : (
           <div className="comparison-grid">
@@ -338,7 +376,7 @@ export const ComparisonView = ({
 
         {groupRows.length === 0 ? (
           <div className="empty-state">
-            <p>Import friend plans and mark artists to see group free time.</p>
+            <p>Sync friend plans and mark artists to see group free time.</p>
           </div>
         ) : (
           groupFreeTimeData.map(({ day, schedule }) => (

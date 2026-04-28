@@ -127,12 +127,15 @@ const AppRoutes = () => {
               setProfileName={festivalState.setProfileName}
               setTimes={festivalState.setTimes}
               imports={festivalState.imports}
+              syncedImports={festivalState.syncedImports}
               onAddImports={festivalState.addImports}
               onRemoveImport={festivalState.removeImport}
               clashDecisions={festivalState.clashDecisions}
               onClashDecisionChange={festivalState.setClashDecision}
               groupCode={festivalState.groupCode}
               setGroupCode={festivalState.setGroupCode}
+              groupSyncState={festivalState.groupSyncState}
+              onSyncGroup={festivalState.syncGroupNow}
             />
           }
         />
@@ -144,6 +147,7 @@ const AppRoutes = () => {
               profileName={festivalState.profileName}
               setTimes={festivalState.setTimes}
               imports={festivalState.imports}
+              syncedImports={festivalState.syncedImports}
               clashDecisions={festivalState.clashDecisions}
               groupCode={festivalState.groupCode}
             />

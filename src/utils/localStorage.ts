@@ -7,6 +7,7 @@ const storageKeys = {
   freeTimeWindow: "download-clash-finder:free-time-window",
   clashDecisions: "download-clash-finder:clash-decisions",
   groupCode: "download-clash-finder:group-code",
+  groupMemberId: "download-clash-finder:group-member-id",
 };
 
 const parseJson = <T>(value: string | null, fallback: T): T => {
@@ -54,6 +55,27 @@ export const loadGroupCode = () =>
 
 export const saveGroupCode = (value: string) => {
   window.localStorage.setItem(storageKeys.groupCode, value.trim());
+};
+
+const createGroupMemberId = () => {
+  if (typeof window.crypto?.randomUUID === "function") {
+    return window.crypto.randomUUID();
+  }
+
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
+};
+
+export const loadGroupMemberId = () => {
+  const existing = window.localStorage.getItem(storageKeys.groupMemberId);
+
+  if (existing) {
+    return existing;
+  }
+
+  const memberId = createGroupMemberId();
+  window.localStorage.setItem(storageKeys.groupMemberId, memberId);
+
+  return memberId;
 };
 
 export interface FreeTimeWindow {

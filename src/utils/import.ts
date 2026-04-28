@@ -42,10 +42,10 @@ const parseClashDecisions = (value: unknown): ClashDecisionMap => {
   ) as ClashDecisionMap;
 };
 
-export const parseImportedPlan = async (file: File): Promise<FestivalExport> => {
-  const text = await file.text();
-  const parsed = JSON.parse(text) as unknown;
-
+export const parseFestivalExport = (
+  parsed: unknown,
+  fallbackProfileName = "Imported plan",
+): FestivalExport => {
   if (!isRecord(parsed)) {
     throw new Error("That file is not a valid plan export.");
   }
@@ -63,10 +63,17 @@ export const parseImportedPlan = async (file: File): Promise<FestivalExport> => 
     },
     profileName: typeof parsed.profileName === "string" && parsed.profileName.trim()
       ? parsed.profileName.trim()
-      : file.name.replace(/\.json$/i, ""),
+      : fallbackProfileName,
     intents: parseIntentMap(parsed.intents),
     setTimes: parseSetTimes(parsed.setTimes),
     clashDecisions: parseClashDecisions(parsed.clashDecisions),
     groupCode: typeof parsed.groupCode === "string" ? parsed.groupCode.trim() : undefined,
   };
+};
+
+export const parseImportedPlan = async (file: File): Promise<FestivalExport> => {
+  const text = await file.text();
+  const parsed = JSON.parse(text) as unknown;
+
+  return parseFestivalExport(parsed, file.name.replace(/\.json$/i, ""));
 };

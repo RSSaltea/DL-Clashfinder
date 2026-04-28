@@ -11,6 +11,7 @@ interface GroupItineraryProps {
   profileName: string;
   setTimes: SetTimeMap;
   imports: FestivalExport[];
+  syncedImports: FestivalExport[];
   clashDecisions: ClashDecisionMap;
   groupCode: string;
 }
@@ -20,6 +21,7 @@ export const GroupItinerary = ({
   profileName,
   setTimes,
   imports,
+  syncedImports,
   clashDecisions,
   groupCode,
 }: GroupItineraryProps) => {
@@ -30,8 +32,16 @@ export const GroupItinerary = ({
   const profiles = useMemo<ProfilePlan[]>(
     () => [
       { id: "local", name: profileName || "Me", intents, setTimes, clashDecisions, groupCode },
+      ...syncedImports.map((item, index) => ({
+        id: `synced-${item.profileName}-${index}`,
+        name: item.profileName,
+        intents: item.intents,
+        setTimes: item.setTimes,
+        clashDecisions: item.clashDecisions,
+        groupCode: item.groupCode,
+      })),
       ...imports.map((item, index) => ({
-        id: `${item.profileName}-${index}`,
+        id: `imported-${item.profileName}-${index}`,
         name: item.profileName,
         intents: item.intents,
         setTimes: item.setTimes,
@@ -39,7 +49,7 @@ export const GroupItinerary = ({
         groupCode: item.groupCode,
       })),
     ],
-    [clashDecisions, groupCode, imports, intents, profileName, setTimes],
+    [clashDecisions, groupCode, imports, intents, profileName, setTimes, syncedImports],
   );
 
   const combinedSetTimes = useMemo(
@@ -72,7 +82,7 @@ export const GroupItinerary = ({
           <p className="eyebrow">Everyone's route</p>
           <h1>Group Itinerary</h1>
         </div>
-        <p className="muted">Uses imported plans, group clash choices, and the Free Time window.</p>
+        <p className="muted">Uses synced/imported plans, group clash choices, and the Free Time window.</p>
       </section>
 
       {schedules.map((schedule) => (

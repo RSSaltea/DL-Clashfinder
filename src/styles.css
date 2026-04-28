@@ -163,6 +163,13 @@ p {
   border-color: var(--amber);
 }
 
+.primary-button:disabled,
+.secondary-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.56;
+  transform: none;
+}
+
 .page-shell {
   width: min(1480px, 100%);
   margin: 0 auto;
@@ -673,6 +680,11 @@ p {
   align-items: stretch;
 }
 
+.sync-button {
+  flex: 0 0 10rem;
+  min-height: 4.5rem;
+}
+
 .text-field {
   flex: 1 1 18rem;
   align-items: stretch;
@@ -735,13 +747,38 @@ p {
   cursor: pointer;
 }
 
+.sync-pill {
+  border-color: rgba(40, 190, 179, 0.42);
+  background: rgba(40, 190, 179, 0.1);
+}
+
 .info-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
   margin-bottom: 1rem;
   border: 1px solid rgba(40, 190, 179, 0.28);
   border-radius: 8px;
   background: rgba(40, 190, 179, 0.08);
   color: var(--muted);
   padding: 0.75rem 0.9rem;
+}
+
+.sync-strip--syncing {
+  border-color: rgba(242, 162, 58, 0.35);
+  background: rgba(242, 162, 58, 0.1);
+}
+
+.sync-strip--synced {
+  border-color: rgba(117, 196, 111, 0.35);
+  background: rgba(117, 196, 111, 0.09);
+}
+
+.sync-strip--disabled,
+.sync-strip--error {
+  border-color: rgba(229, 72, 57, 0.35);
+  background: rgba(229, 72, 57, 0.1);
 }
 
 .error-banner,
@@ -1071,6 +1108,7 @@ p {
 
   .toolbar-band,
   .compare-actions,
+  .info-strip,
   .artist-hero,
   .section-heading {
     align-items: stretch;
