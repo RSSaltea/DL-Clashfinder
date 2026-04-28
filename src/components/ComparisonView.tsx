@@ -193,10 +193,7 @@ export const ComparisonView = ({
           <p className="eyebrow">Share and decide together</p>
           <h1>Compare Plans</h1>
         </div>
-        <button className="primary-button" type="button" onClick={handleExport}>
-          <Download size={18} />
-          Export JSON
-        </button>
+        <p className="muted">Type the same group code as your friends and plans sync automatically.</p>
       </section>
 
       <section className="compare-actions">
@@ -211,11 +208,6 @@ export const ComparisonView = ({
             placeholder="e.g. download-crew"
             onChange={(event) => setGroupCode(event.target.value)}
           />
-        </label>
-        <label className="file-drop">
-          <Upload size={20} />
-          <span>Import friend JSON</span>
-          <input type="file" accept="application/json,.json" multiple onChange={handleImport} />
         </label>
         <button
           className="secondary-button sync-button"
@@ -239,6 +231,21 @@ export const ComparisonView = ({
           </span>
         )}
       </div>
+
+      <details className="backup-panel">
+        <summary>JSON backup</summary>
+        <div className="backup-actions">
+          <button className="secondary-button" type="button" onClick={handleExport}>
+            <Download size={18} />
+            Export JSON
+          </button>
+          <label className="file-drop file-drop--compact">
+            <Upload size={20} />
+            <span>Import JSON</span>
+            <input type="file" accept="application/json,.json" multiple onChange={handleImport} />
+          </label>
+        </div>
+      </details>
 
       {error && <div className="error-banner">{error}</div>}
 
@@ -270,7 +277,7 @@ export const ComparisonView = ({
         <article className="summary-panel">
           <h2>Mutual Picks</h2>
           {mutualWithMe.length === 0 ? (
-            <p className="muted">Import a friend plan to see shared artists.</p>
+            <p className="muted">Use the same group code as friends to see shared artists.</p>
           ) : (
             <div className="compact-list">
               {mutualWithMe.map((artist) => {
@@ -314,7 +321,7 @@ export const ComparisonView = ({
         {groupClashes.length === 0 ? (
           <div className="empty-state">
             <h2>No shared clashes yet.</h2>
-            <p>Sync a group code, import another plan, or pick overlapping artists to compare decisions.</p>
+            <p>Sync a group code or pick overlapping artists to compare decisions.</p>
           </div>
         ) : (
           <div className="comparison-grid">

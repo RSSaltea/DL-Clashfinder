@@ -7,8 +7,8 @@ A better version of Clash Finder for Download Festival 2026 planning.
 - Browse the Friday to Sunday arena lineup by day and stage.
 - Mark artists as interested or definite.
 - Edit set times in `src/data/lineup.ts` and detect clashes.
-- Export your plan as JSON and import friends' plans for comparison.
-- Sync everyone in the same group code through Supabase.
+- Sync everyone in the same group code through Supabase, without import/export.
+- Export/import JSON as an optional backup.
 - Open an artist page for every act.
 - View static Spotify embeds for each artist's top tracks.
 
@@ -83,7 +83,7 @@ VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=your-anon-key
 ```
 
-Anyone using the same group code, for example `raffo-crew`, will appear in Compare and Group Itinerary. Group codes are for convenience, not privacy, so only share codes with people you trust.
+Anyone using the same group code, for example `raffo-crew`, will appear in Compare and Group Itinerary automatically. No JSON import/export is needed once Supabase is configured. Group codes are for convenience, not privacy, so only share codes with people you trust.
 
 ## GitHub Pages
 

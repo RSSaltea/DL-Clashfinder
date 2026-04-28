@@ -718,6 +718,34 @@ p {
   cursor: pointer;
 }
 
+.file-drop--compact {
+  flex: 0 1 12rem;
+  min-height: 2.8rem;
+  padding-inline: 0.8rem;
+}
+
+.backup-panel {
+  margin: -0.25rem 0 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  background: rgba(20, 25, 29, 0.62);
+  padding: 0.75rem 0.9rem;
+}
+
+.backup-panel summary {
+  width: fit-content;
+  color: var(--muted);
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.backup-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-top: 0.75rem;
+}
+
 .import-list {
   display: flex;
   flex-wrap: wrap;

@@ -82,7 +82,7 @@ export const GroupItinerary = ({
           <p className="eyebrow">Everyone's route</p>
           <h1>Group Itinerary</h1>
         </div>
-        <p className="muted">Uses synced/imported plans, group clash choices, and the Free Time window.</p>
+        <p className="muted">Uses synced group plans, group clash choices, and the Free Time window.</p>
       </section>
 
       {schedules.map((schedule) => (
