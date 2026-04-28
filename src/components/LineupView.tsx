@@ -90,14 +90,10 @@ export const LineupView = ({ intents, onIntentChange, setTimes }: LineupViewProp
   const totals = useMemo(() => {
     const selected = Object.keys(intents).length;
     const definite = Object.values(intents).filter((intent) => intent === "definite").length;
-    const timed = lineup.filter((artist) => {
-      const time = getEffectiveTime(artist, setTimes);
-      return time.start && time.end;
-    }).length;
     const clashingSelections = Array.from(clashMap.entries()).filter(([artistId]) => intents[artistId]).length;
 
-    return { selected, definite, timed, clashingSelections };
-  }, [clashMap, intents, setTimes]);
+    return { selected, definite, clashingSelections };
+  }, [clashMap, intents]);
 
   return (
     <main className="page-shell">
@@ -115,10 +111,6 @@ export const LineupView = ({ intents, onIntentChange, setTimes }: LineupViewProp
           <div>
             <strong>{totals.definite}</strong>
             <span>definite</span>
-          </div>
-          <div>
-            <strong>{totals.timed}</strong>
-            <span>timed</span>
           </div>
           <div>
             <strong>{totals.clashingSelections}</strong>
