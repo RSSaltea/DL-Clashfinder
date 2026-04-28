@@ -11,8 +11,9 @@ interface CompareProps {
   syncedImports: FestivalExport[];
   onAddImports: (newImports: FestivalExport[]) => void;
   onRemoveImport: (index: number) => void;
-  clashDecisions: ClashDecisionMap;
-  onClashDecisionChange: (clashId: string, artistId: string | undefined) => void;
+  personalClashDecisions: ClashDecisionMap;
+  groupClashVotes: ClashDecisionMap;
+  onGroupClashVoteChange: (clashId: string, artistId: string | undefined) => void;
   groupCode: string;
   setGroupCode: (value: string) => void;
   groupSyncState: GroupSyncState;

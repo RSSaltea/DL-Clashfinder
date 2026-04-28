@@ -2,6 +2,8 @@ import { useMemo } from "react";
 import { ScheduleDayView } from "../components/ScheduleDayView";
 import { festivalDays } from "../data/lineup";
 import type { ClashDecisionMap, FestivalExport, IntentMap, ProfilePlan, SetTimeMap } from "../types";
+import { getAllClashes } from "../utils/clash";
+import { getGroupClashDecisionMap } from "../utils/groupVotes";
 import { loadFreeTimeWindow } from "../utils/localStorage";
 import { buildScheduleDay, getGroupArtists, getSupportMap } from "../utils/schedule";
 import { timeToMinutes, windowEndToMins } from "../utils/time";
@@ -12,7 +14,7 @@ interface GroupItineraryProps {
   setTimes: SetTimeMap;
   imports: FestivalExport[];
   syncedImports: FestivalExport[];
-  clashDecisions: ClashDecisionMap;
+  groupClashVotes: ClashDecisionMap;
   groupCode: string;
 }
 
@@ -22,7 +24,7 @@ export const GroupItinerary = ({
   setTimes,
   imports,
   syncedImports,
-  clashDecisions,
+  groupClashVotes,
   groupCode,
 }: GroupItineraryProps) => {
   const freeTimeWindow = useMemo(() => loadFreeTimeWindow(), []);
@@ -31,13 +33,13 @@ export const GroupItinerary = ({
 
   const profiles = useMemo<ProfilePlan[]>(
     () => [
-      { id: "local", name: profileName || "Me", intents, setTimes, clashDecisions, groupCode },
+      { id: "local", name: profileName || "Me", intents, setTimes, groupClashVotes, groupCode },
       ...syncedImports.map((item, index) => ({
         id: `synced-${item.profileName}-${index}`,
         name: item.profileName,
         intents: item.intents,
         setTimes: item.setTimes,
-        clashDecisions: item.clashDecisions,
+        groupClashVotes: item.groupClashVotes,
         groupCode: item.groupCode,
       })),
       ...imports.map((item, index) => ({
@@ -45,11 +47,11 @@ export const GroupItinerary = ({
         name: item.profileName,
         intents: item.intents,
         setTimes: item.setTimes,
-        clashDecisions: item.clashDecisions,
+        groupClashVotes: item.groupClashVotes,
         groupCode: item.groupCode,
       })),
     ],
-    [clashDecisions, groupCode, imports, intents, profileName, setTimes, syncedImports],
+    [groupClashVotes, groupCode, imports, intents, profileName, setTimes, syncedImports],
   );
 
   const combinedSetTimes = useMemo(
@@ -59,6 +61,13 @@ export const GroupItinerary = ({
 
   const supportMap = useMemo(() => getSupportMap(profiles), [profiles]);
 
+  const groupDecisionMap = useMemo(() => {
+    const groupArtists = getGroupArtists(profiles);
+    const groupClashes = getAllClashes(groupArtists, combinedSetTimes);
+
+    return getGroupClashDecisionMap(groupClashes, profiles);
+  }, [combinedSetTimes, profiles]);
+
   const schedules = useMemo(
     () =>
       festivalDays.map((day) =>
@@ -66,13 +75,13 @@ export const GroupItinerary = ({
           day.id,
           getGroupArtists(profiles, day.id),
           combinedSetTimes,
-          clashDecisions,
+          groupDecisionMap,
           windowStartMins,
           windowEndMins,
           supportMap,
         ),
       ),
-    [clashDecisions, combinedSetTimes, profiles, supportMap, windowEndMins, windowStartMins],
+    [combinedSetTimes, groupDecisionMap, profiles, supportMap, windowEndMins, windowStartMins],
   );
 
   return (

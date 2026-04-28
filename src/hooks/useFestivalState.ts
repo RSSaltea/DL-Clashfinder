@@ -12,12 +12,14 @@ import {
   getNextIntent,
   loadClashDecisions,
   loadGroupCode,
+  loadGroupClashVotes,
   loadGroupMemberId,
   loadImports,
   loadIntentMap,
   loadProfileName,
   saveClashDecisions,
   saveGroupCode,
+  saveGroupClashVotes,
   saveImports,
   saveIntentMap,
   saveProfileName,
@@ -42,6 +44,7 @@ export const useFestivalState = () => {
   const [imports, setImportsState] = useState<FestivalExport[]>(() => loadImports());
   const [syncedImports, setSyncedImports] = useState<FestivalExport[]>([]);
   const [clashDecisions, setClashDecisions] = useState<ClashDecisionMap>(() => loadClashDecisions());
+  const [groupClashVotes, setGroupClashVotes] = useState<ClashDecisionMap>(() => loadGroupClashVotes());
   const [groupCode, setGroupCodeState] = useState(() => loadGroupCode());
   const [groupSyncState, setGroupSyncState] = useState<GroupSyncState>(() => getInitialGroupSyncState());
   const groupMemberId = useMemo(() => loadGroupMemberId(), []);
@@ -68,6 +71,10 @@ export const useFestivalState = () => {
   useEffect(() => {
     saveClashDecisions(clashDecisions);
   }, [clashDecisions]);
+
+  useEffect(() => {
+    saveGroupClashVotes(groupClashVotes);
+  }, [groupClashVotes]);
 
   useEffect(() => {
     saveGroupCode(groupCode);
@@ -100,6 +107,20 @@ export const useFestivalState = () => {
 
   const setClashDecision = (clashId: string, artistId: string | undefined) => {
     setClashDecisions((current) => {
+      const next = { ...current };
+
+      if (artistId) {
+        next[clashId] = artistId;
+      } else {
+        delete next[clashId];
+      }
+
+      return next;
+    });
+  };
+
+  const setGroupClashVote = (clashId: string, artistId: string | undefined) => {
+    setGroupClashVotes((current) => {
       const next = { ...current };
 
       if (artistId) {
@@ -151,7 +172,14 @@ export const useFestivalState = () => {
     }));
 
     try {
-      const payload = createExportPayload(profileName, intents, setTimes, clashDecisions, currentGroupCode);
+      const payload = createExportPayload(
+        profileName,
+        intents,
+        setTimes,
+        clashDecisions,
+        currentGroupCode,
+        groupClashVotes,
+      );
 
       await pushGroupPlan(currentGroupCode, groupMemberId, payload);
 
@@ -187,6 +215,7 @@ export const useFestivalState = () => {
   }, [
     clashDecisions,
     groupCode,
+    groupClashVotes,
     groupMemberId,
     intents,
     profileName,
@@ -225,8 +254,10 @@ export const useFestivalState = () => {
   return {
     intents,
     clashDecisions,
+    groupClashVotes,
     selectedArtistIds,
     setClashDecision,
+    setGroupClashVote,
     setArtistIntent,
     setIntents,
     setProfileName: setProfileNameState,

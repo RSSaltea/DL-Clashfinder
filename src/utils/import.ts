@@ -67,6 +67,7 @@ export const parseFestivalExport = (
     intents: parseIntentMap(parsed.intents),
     setTimes: parseSetTimes(parsed.setTimes),
     clashDecisions: parseClashDecisions(parsed.clashDecisions),
+    groupClashVotes: parseClashDecisions(parsed.groupClashVotes),
     groupCode: typeof parsed.groupCode === "string" ? parsed.groupCode.trim() : undefined,
   };
 };

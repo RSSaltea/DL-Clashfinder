@@ -46,6 +46,7 @@ export interface ProfilePlan {
   intents: IntentMap;
   setTimes: SetTimeMap;
   clashDecisions?: ClashDecisionMap;
+  groupClashVotes?: ClashDecisionMap;
   groupCode?: string;
 }
 
@@ -60,6 +61,7 @@ export interface FestivalExport {
   intents: IntentMap;
   setTimes: SetTimeMap;
   clashDecisions?: ClashDecisionMap;
+  groupClashVotes?: ClashDecisionMap;
   groupCode?: string;
 }
 

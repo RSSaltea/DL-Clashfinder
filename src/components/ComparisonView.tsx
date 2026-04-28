@@ -4,6 +4,7 @@ import { festivalDays } from "../data/lineup";
 import type { Artist, ClashDecisionMap, FestivalExport, IntentMap, ProfilePlan, SetTimeMap } from "../types";
 import { createExportPayload, downloadJson } from "../utils/export";
 import type { GroupSyncState } from "../utils/groupSync";
+import { getClashVoteSummary, getGroupClashDecisionMap } from "../utils/groupVotes";
 import { parseImportedPlan } from "../utils/import";
 import { loadFreeTimeWindow } from "../utils/localStorage";
 import {
@@ -25,8 +26,9 @@ interface ComparisonViewProps {
   syncedImports: FestivalExport[];
   onAddImports: (newImports: FestivalExport[]) => void;
   onRemoveImport: (index: number) => void;
-  clashDecisions: ClashDecisionMap;
-  onClashDecisionChange: (clashId: string, artistId: string | undefined) => void;
+  personalClashDecisions: ClashDecisionMap;
+  groupClashVotes: ClashDecisionMap;
+  onGroupClashVoteChange: (clashId: string, artistId: string | undefined) => void;
   groupCode: string;
   setGroupCode: (value: string) => void;
   groupSyncState: GroupSyncState;
@@ -59,8 +61,9 @@ export const ComparisonView = ({
   syncedImports,
   onAddImports,
   onRemoveImport,
-  clashDecisions,
-  onClashDecisionChange,
+  personalClashDecisions,
+  groupClashVotes,
+  onGroupClashVoteChange,
   groupCode,
   setGroupCode,
   groupSyncState,
@@ -74,13 +77,13 @@ export const ComparisonView = ({
 
   const profiles = useMemo<ProfilePlan[]>(
     () => [
-      { id: "local", name: profileName || "Me", intents, setTimes, clashDecisions, groupCode },
+      { id: "local", name: profileName || "Me", intents, setTimes, groupClashVotes, groupCode },
       ...syncedImports.map((item, index) => ({
         id: `synced-${item.profileName}-${index}`,
         name: item.profileName,
         intents: item.intents,
         setTimes: item.setTimes,
-        clashDecisions: item.clashDecisions,
+        groupClashVotes: item.groupClashVotes,
         groupCode: item.groupCode,
       })),
       ...imports.map((item, index) => ({
@@ -88,11 +91,11 @@ export const ComparisonView = ({
         name: item.profileName,
         intents: item.intents,
         setTimes: item.setTimes,
-        clashDecisions: item.clashDecisions,
+        groupClashVotes: item.groupClashVotes,
         groupCode: item.groupCode,
       })),
     ],
-    [clashDecisions, groupCode, imports, intents, profileName, setTimes, syncedImports],
+    [groupClashVotes, groupCode, imports, intents, profileName, setTimes, syncedImports],
   );
 
   const combinedSetTimes = useMemo(
@@ -143,11 +146,18 @@ export const ComparisonView = ({
     );
   }, [groupRows, profiles]);
 
-  const groupClashes = useMemo(() => {
+  const allGroupClashes = useMemo(() => {
     const artists = groupRows.map((row) => row.artist);
 
-    return getAllClashes(artists, combinedSetTimes).slice(0, 60);
+    return getAllClashes(artists, combinedSetTimes);
   }, [combinedSetTimes, groupRows]);
+
+  const groupClashes = useMemo(() => allGroupClashes.slice(0, 60), [allGroupClashes]);
+
+  const groupDecisionMap = useMemo(
+    () => getGroupClashDecisionMap(allGroupClashes, profiles),
+    [allGroupClashes, profiles],
+  );
 
   const groupFreeTimeData = useMemo(
     () =>
@@ -157,13 +167,13 @@ export const ComparisonView = ({
           day.id,
           getGroupArtists(profiles, day.id),
           combinedSetTimes,
-          clashDecisions,
+          groupDecisionMap,
           windowStartMins,
           windowEndMins,
           supportMap,
         ),
       })),
-    [clashDecisions, combinedSetTimes, profiles, supportMap, windowEndMins, windowStartMins],
+    [combinedSetTimes, groupDecisionMap, profiles, supportMap, windowEndMins, windowStartMins],
   );
 
   const handleImport = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -181,7 +191,7 @@ export const ComparisonView = ({
   };
 
   const handleExport = () => {
-    downloadJson(createExportPayload(profileName, intents, setTimes, clashDecisions, groupCode));
+    downloadJson(createExportPayload(profileName, intents, setTimes, personalClashDecisions, groupCode, groupClashVotes));
   };
 
   const windowEndLabel = freeTimeWindow.end === "00:00" ? "Midnight" : freeTimeWindow.end;
@@ -327,45 +337,64 @@ export const ComparisonView = ({
           <div className="comparison-grid">
             {groupClashes.map((clash) => (
               <article className="clash-card" key={clash.id}>
-                <div className="clash-card__time">
-                  <strong>{clash.start} to {clash.end}</strong>
-                  <span>{festivalDays.find((day) => day.id === clash.first.day)?.shortLabel}</span>
-                </div>
-                <div className="versus-row">
-                  {[clash.first, clash.second].map((artist) => {
-                    const support = supportMap.get(artist.id);
-                    const time = getEffectiveTime(artist, combinedSetTimes);
+                {(() => {
+                  const voteSummary = getClashVoteSummary(clash, profiles);
+                  const winner = [clash.first, clash.second].find((artist) => artist.id === voteSummary.winnerId);
+                  const localVote = groupClashVotes[clash.id];
 
-                    return (
-                      <div key={artist.id}>
-                        <h3>{artist.name}</h3>
-                        <p>{getStageLabel(artist)} - {time.start} to {time.end}</p>
-                        <p>{getSupportText(support)}</p>
+                  return (
+                    <>
+                      <div className="clash-card__time">
+                        <strong>{clash.start} to {clash.end}</strong>
+                        <span>{festivalDays.find((day) => day.id === clash.first.day)?.shortLabel}</span>
                       </div>
-                    );
-                  })}
-                </div>
-                <div className="clash-choice-row" aria-label={`Choose between ${clash.first.name} and ${clash.second.name}`}>
-                  {[clash.first, clash.second].map((artist) => {
-                    const selected = clashDecisions[clash.id] === artist.id;
+                      <div className="versus-row">
+                        {[clash.first, clash.second].map((artist) => {
+                          const support = supportMap.get(artist.id);
+                          const time = getEffectiveTime(artist, combinedSetTimes);
+                          const voters = voteSummary.votesByArtist[artist.id] ?? [];
 
-                    return (
-                      <button
-                        key={artist.id}
-                        type="button"
-                        className={choiceButtonClass(selected)}
-                        onClick={() => onClashDecisionChange(clash.id, selected ? undefined : artist.id)}
-                      >
-                        Group pick {artist.name}
-                      </button>
-                    );
-                  })}
-                  {clashDecisions[clash.id] && (
-                    <button type="button" className="choice-button" onClick={() => onClashDecisionChange(clash.id, undefined)}>
-                      Clear
-                    </button>
-                  )}
-                </div>
+                          return (
+                            <div key={artist.id} className={voteSummary.winnerId === artist.id ? "vote-leader" : ""}>
+                              <h3>{artist.name}</h3>
+                              <p>{getStageLabel(artist)} - {time.start} to {time.end}</p>
+                              <p>{getSupportText(support)}</p>
+                              <p>{voters.length} vote{voters.length !== 1 ? "s" : ""}{voters.length > 0 ? ` - ${voters.join(", ")}` : ""}</p>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      <div className="vote-result">
+                        {winner
+                          ? `${winner.name} is winning and will be used in the group itinerary.`
+                          : voteSummary.isTie
+                            ? "Tied vote - unresolved, so neither act is removed from the group itinerary yet."
+                            : "No group votes yet."}
+                      </div>
+                      <div className="clash-choice-row" aria-label={`Vote between ${clash.first.name} and ${clash.second.name}`}>
+                        {[clash.first, clash.second].map((artist) => {
+                          const selected = localVote === artist.id;
+
+                          return (
+                            <button
+                              key={artist.id}
+                              type="button"
+                              className={choiceButtonClass(selected)}
+                              onClick={() => onGroupClashVoteChange(clash.id, selected ? undefined : artist.id)}
+                            >
+                              Vote {artist.name}
+                            </button>
+                          );
+                        })}
+                        {localVote && (
+                          <button type="button" className="choice-button" onClick={() => onGroupClashVoteChange(clash.id, undefined)}>
+                            Clear vote
+                          </button>
+                        )}
+                      </div>
+                    </>
+                  );
+                })()}
               </article>
             ))}
           </div>

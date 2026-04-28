@@ -7,6 +7,7 @@ export const createExportPayload = (
   setTimes: SetTimeMap,
   clashDecisions: ClashDecisionMap = {},
   groupCode = "",
+  groupClashVotes: ClashDecisionMap = {},
 ): FestivalExport => ({
   version: 1,
   exportedAt: new Date().toISOString(),
@@ -18,6 +19,7 @@ export const createExportPayload = (
   intents,
   setTimes,
   clashDecisions,
+  groupClashVotes,
   groupCode: groupCode.trim() || undefined,
 });
 

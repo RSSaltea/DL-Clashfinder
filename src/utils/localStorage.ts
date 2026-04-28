@@ -6,6 +6,7 @@ const storageKeys = {
   imports: "download-clash-finder:imports",
   freeTimeWindow: "download-clash-finder:free-time-window",
   clashDecisions: "download-clash-finder:clash-decisions",
+  groupClashVotes: "download-clash-finder:group-clash-votes",
   groupCode: "download-clash-finder:group-code",
   groupMemberId: "download-clash-finder:group-member-id",
 };
@@ -48,6 +49,13 @@ export const loadClashDecisions = (): ClashDecisionMap =>
 
 export const saveClashDecisions = (value: ClashDecisionMap) => {
   window.localStorage.setItem(storageKeys.clashDecisions, JSON.stringify(value));
+};
+
+export const loadGroupClashVotes = (): ClashDecisionMap =>
+  parseJson<ClashDecisionMap>(window.localStorage.getItem(storageKeys.groupClashVotes), {});
+
+export const saveGroupClashVotes = (value: ClashDecisionMap) => {
+  window.localStorage.setItem(storageKeys.groupClashVotes, JSON.stringify(value));
 };
 
 export const loadGroupCode = () =>
