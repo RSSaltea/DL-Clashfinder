@@ -29,9 +29,15 @@ export const ArtistCard = ({
     <article className={`artist-card stage-${artist.stage} ${intent ? "is-selected" : ""}`}>
       <div className="artist-card__top">
         <div className="artist-card__identity">
-          <ArtistLogo artistName={artist.name} searchName={artist.logoSearchName} />
-          <Link className="artist-link" to={`/artist/${artist.id}`}>
-            {artist.name}
+          <Link
+            aria-label={`Open ${artist.name}`}
+            className="artist-link artist-logo-link"
+            data-artist-name={artist.name}
+            title={artist.name}
+            to={`/artist/${artist.id}`}
+          >
+            <ArtistLogo artistName={artist.name} searchName={artist.logoSearchName} />
+            <span className="artist-name-text">{artist.name}</span>
             <ExternalLink size={15} aria-hidden="true" />
           </Link>
         </div>

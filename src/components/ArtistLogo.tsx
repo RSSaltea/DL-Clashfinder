@@ -71,7 +71,7 @@ export const ArtistLogo = ({ artistName, searchName }: ArtistLogoProps) => {
   return (
     <div className={`artist-logo ${imageUrl ? "has-image" : ""}`} ref={logoRef}>
       {imageUrl ? (
-        <img src={imageUrl} alt={`${artistName} logo`} loading="lazy" />
+        <img src={imageUrl} alt="" loading="lazy" />
       ) : (
         <span>{getInitials(artistName)}</span>
       )}
