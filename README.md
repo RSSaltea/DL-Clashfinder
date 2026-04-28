@@ -9,7 +9,7 @@ A better version of Clash Finder for Download Festival 2026 planning.
 - Edit set times in `src/data/lineup.ts` and detect clashes.
 - Export your plan as JSON and import friends' plans for comparison.
 - Open an artist page for every act.
-- Connect Spotify with PKCE to search artists and show their top tracks.
+- Let's you view top 5 tracks of every artist.
 
 ## Run Locally
 
