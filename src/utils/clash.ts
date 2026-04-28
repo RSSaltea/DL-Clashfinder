@@ -1,5 +1,19 @@
-import type { Artist, ClashPair, SetTimeMap } from "../types";
-import { getEffectiveTime, getOverlapRange } from "./time";
+import type { Artist, ClashPair, SetTimeMap, TightGapPair } from "../types";
+import { getEffectiveTime, getOverlapRange, minutesToTime, timeToMinutes } from "./time";
+
+const DEFAULT_TIGHT_GAP_MINUTES = 10;
+
+const getTimedBounds = (artist: Artist, setTimes: SetTimeMap) => {
+  const time = getEffectiveTime(artist, setTimes);
+  const start = timeToMinutes(time.start);
+  const end = timeToMinutes(time.end);
+
+  if (start === undefined || end === undefined || end <= start) {
+    return undefined;
+  }
+
+  return { start, end };
+};
 
 export const getClashesForArtist = (
   artist: Artist,
@@ -51,5 +65,67 @@ export const getAllClashes = (artists: Artist[], setTimes: SetTimeMap): ClashPai
     }
 
     return a.start.localeCompare(b.start);
+  });
+};
+
+export const getAllTightGaps = (
+  artists: Artist[],
+  setTimes: SetTimeMap,
+  thresholdMinutes = DEFAULT_TIGHT_GAP_MINUTES,
+): TightGapPair[] => {
+  const gaps: TightGapPair[] = [];
+
+  artists.forEach((first, firstIndex) => {
+    artists.slice(firstIndex + 1).forEach((second) => {
+      if (first.day !== second.day) {
+        return;
+      }
+
+      const firstTime = getTimedBounds(first, setTimes);
+      const secondTime = getTimedBounds(second, setTimes);
+
+      if (!firstTime || !secondTime) {
+        return;
+      }
+
+      const firstToSecond = secondTime.start - firstTime.end;
+      const secondToFirst = firstTime.start - secondTime.end;
+
+      if (firstToSecond >= 0 && firstToSecond <= thresholdMinutes) {
+        gaps.push({
+          id: `${first.id}--${second.id}--tight-gap`,
+          day: first.day,
+          first,
+          second,
+          minutes: firstToSecond,
+          betweenStart: minutesToTime(firstTime.end),
+          betweenEnd: minutesToTime(secondTime.start),
+        });
+      }
+
+      if (secondToFirst >= 0 && secondToFirst <= thresholdMinutes) {
+        gaps.push({
+          id: `${second.id}--${first.id}--tight-gap`,
+          day: first.day,
+          first: second,
+          second: first,
+          minutes: secondToFirst,
+          betweenStart: minutesToTime(secondTime.end),
+          betweenEnd: minutesToTime(firstTime.start),
+        });
+      }
+    });
+  });
+
+  return gaps.sort((a, b) => {
+    if (a.day !== b.day) {
+      return a.day.localeCompare(b.day);
+    }
+
+    if (a.betweenStart !== b.betweenStart) {
+      return a.betweenStart.localeCompare(b.betweenStart);
+    }
+
+    return a.first.order - b.first.order;
   });
 };

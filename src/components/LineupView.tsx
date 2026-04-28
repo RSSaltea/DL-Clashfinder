@@ -1,8 +1,8 @@
 import { Filter, Search, SlidersHorizontal } from "lucide-react";
 import { useMemo, useState } from "react";
 import { festivalDays, festivalStages, lineup } from "../data/lineup";
-import type { Artist, DayId, Intent, IntentMap, SetTimeMap, StageId } from "../types";
-import { getAllClashes } from "../utils/clash";
+import type { Artist, ArtistTightGap, DayId, Intent, IntentMap, SetTimeMap, StageId } from "../types";
+import { getAllClashes, getAllTightGaps } from "../utils/clash";
 import { getEffectiveTime } from "../utils/time";
 import { ArtistCard } from "./ArtistCard";
 
@@ -36,14 +36,36 @@ export const LineupView = ({ intents, onIntentChange, setTimes }: LineupViewProp
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [search, setSearch] = useState("");
 
+  const selectedArtists = useMemo(
+    () => lineup.filter((artist) => Boolean(intents[artist.id])),
+    [intents],
+  );
+
   const clashMap = useMemo(() => {
     const map = new Map<string, Artist[]>();
-    getAllClashes(lineup, setTimes).forEach((clash) => {
+    getAllClashes(selectedArtists, setTimes).forEach((clash) => {
       map.set(clash.first.id, [...(map.get(clash.first.id) ?? []), clash.second]);
       map.set(clash.second.id, [...(map.get(clash.second.id) ?? []), clash.first]);
     });
     return map;
-  }, [setTimes]);
+  }, [selectedArtists, setTimes]);
+
+  const tightGapMap = useMemo(() => {
+    const map = new Map<string, ArtistTightGap[]>();
+
+    getAllTightGaps(selectedArtists, setTimes).forEach((gap) => {
+      map.set(gap.first.id, [
+        ...(map.get(gap.first.id) ?? []),
+        { artist: gap.second, minutes: gap.minutes, position: "after" },
+      ]);
+      map.set(gap.second.id, [
+        ...(map.get(gap.second.id) ?? []),
+        { artist: gap.first, minutes: gap.minutes, position: "before" },
+      ]);
+    });
+
+    return map;
+  }, [selectedArtists, setTimes]);
 
   const visibleArtists = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -197,6 +219,7 @@ export const LineupView = ({ intents, onIntentChange, setTimes }: LineupViewProp
                                 clashes={clashMap.get(artist.id) ?? []}
                                 intent={intents[artist.id]}
                                 onIntentChange={onIntentChange}
+                                tightGaps={tightGapMap.get(artist.id) ?? []}
                                 time={getEffectiveTime(artist, setTimes)}
                               />
                             ))}

@@ -58,6 +58,22 @@ export interface ClashPair {
   end: string;
 }
 
+export interface TightGapPair {
+  id: string;
+  day: DayId;
+  first: Artist;
+  second: Artist;
+  minutes: number;
+  betweenStart: string;
+  betweenEnd: string;
+}
+
+export interface ArtistTightGap {
+  artist: Artist;
+  minutes: number;
+  position: "before" | "after";
+}
+
 export interface SpotifyArtist {
   id: string;
   name: string;

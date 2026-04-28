@@ -5,7 +5,7 @@ import type { IntentMap, SetTimeMap } from "../types";
 import { getAllClashes } from "../utils/clash";
 import { formatTimeRange, getEffectiveTime } from "../utils/time";
 
-type ClashScope = "mine" | "definite" | "all";
+type ClashScope = "mine" | "definite";
 
 interface ClashViewProps {
   intents: IntentMap;
@@ -16,10 +16,6 @@ export const ClashView = ({ intents, setTimes }: ClashViewProps) => {
   const [scope, setScope] = useState<ClashScope>("mine");
 
   const scopedArtists = useMemo(() => {
-    if (scope === "all") {
-      return lineup;
-    }
-
     return lineup.filter((artist) => {
       if (scope === "definite") {
         return intents[artist.id] === "definite";
@@ -43,7 +39,6 @@ export const ClashView = ({ intents, setTimes }: ClashViewProps) => {
           <select value={scope} onChange={(event) => setScope(event.target.value as ClashScope)}>
             <option value="mine">My picks</option>
             <option value="definite">Definite only</option>
-            <option value="all">All timed artists</option>
           </select>
         </label>
       </section>

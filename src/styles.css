@@ -520,6 +520,21 @@ p {
   line-height: 1.2;
 }
 
+.clash-badge svg {
+  flex: 0 0 auto;
+}
+
+.clash-badge span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.clash-badge.tight-gap {
+  border-color: rgba(65, 194, 201, 0.35);
+  background: rgba(65, 194, 201, 0.11);
+  color: #c4f7ff;
+}
+
 .clash-badge.wide {
   margin-top: 0.8rem;
 }
