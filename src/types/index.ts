@@ -25,7 +25,15 @@ export interface Artist {
   order: number;
   defaultStart?: string;
   defaultEnd?: string;
+  logoSearchName?: string;
   spotifyArtistId?: string;
+}
+
+export interface ArtistArtwork {
+  logoUrl?: string;
+  imageUrl?: string;
+  sourceUrl?: string;
+  fetchedAt: string;
 }
 
 export interface ArtistSetTime {

@@ -10,6 +10,8 @@ type DayFilter = "all" | DayId;
 type StageFilter = "all" | StageId;
 type StatusFilter = "all" | "selected" | Intent;
 
+const downloadLogoUrl = `${import.meta.env.BASE_URL}download-festival-logo.svg`;
+
 interface LineupViewProps {
   intents: IntentMap;
   setTimes: SetTimeMap;
@@ -80,6 +82,7 @@ export const LineupView = ({ intents, onIntentChange, onTimeChange, setTimes }: 
     <main className="page-shell">
       <section className="toolbar-band">
         <div>
+          <img className="hero-download-logo" src={downloadLogoUrl} alt="Download Festival" />
           <p className="eyebrow">Download Festival 2026</p>
           <h1>Clash Finder</h1>
         </div>

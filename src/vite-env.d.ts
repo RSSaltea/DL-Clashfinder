@@ -3,6 +3,7 @@
 interface ImportMetaEnv {
   readonly VITE_BASE_PATH?: string;
   readonly VITE_SPOTIFY_CLIENT_ID?: string;
+  readonly VITE_THEAUDIODB_API_KEY?: string;
 }
 
 interface ImportMeta {

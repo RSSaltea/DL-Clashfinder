@@ -19,6 +19,8 @@ const ScrollToTop = () => {
   return null;
 };
 
+const downloadLogoUrl = `${import.meta.env.BASE_URL}download-festival-logo.svg`;
+
 const AppRoutes = () => {
   const festivalState = useFestivalState();
   const [spotifyMessage, setSpotifyMessage] = useState("");
@@ -41,7 +43,7 @@ const AppRoutes = () => {
       <ScrollToTop />
       <header className="app-header">
         <div className="brand-lockup">
-          <div className="brand-mark">DL</div>
+          <img className="download-logo" src={downloadLogoUrl} alt="Download Festival" />
           <div>
             <strong>{festival.name}</strong>
             <span>{festival.year} Clash Finder</span>

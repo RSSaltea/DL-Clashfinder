@@ -1,8 +1,8 @@
 import { AlertTriangle, ExternalLink } from "lucide-react";
 import { Link } from "react-router-dom";
-import { getDay, getStage } from "../data/lineup";
 import type { Artist, ArtistSetTime, Intent } from "../types";
 import { formatTimeRange } from "../utils/time";
+import { ArtistLogo } from "./ArtistLogo";
 import { IntentButtons } from "./IntentButtons";
 import { SetTimeInput } from "./SetTimeInput";
 
@@ -23,15 +23,13 @@ export const ArtistCard = ({
   onTimeChange,
   time,
 }: ArtistCardProps) => {
-  const stage = getStage(artist.stage);
-  const day = getDay(artist.day);
   const selectedClashes = clashes.slice(0, 3).map((clash) => clash.name).join(", ");
 
   return (
     <article className={`artist-card stage-${artist.stage} ${intent ? "is-selected" : ""}`}>
       <div className="artist-card__top">
-        <div>
-          <p className="meta-line">{day?.shortLabel} · {stage?.shortName}</p>
+        <div className="artist-card__identity">
+          <ArtistLogo artistName={artist.name} searchName={artist.logoSearchName} />
           <Link className="artist-link" to={`/artist/${artist.id}`}>
             {artist.name}
             <ExternalLink size={15} aria-hidden="true" />

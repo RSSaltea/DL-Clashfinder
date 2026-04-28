@@ -10,6 +10,7 @@ A better version of Clash Finder for Download Festival 2026 planning.
 - Export your plan as JSON and import friends' plans for comparison.
 - Open an artist page for every act.
 - Connect Spotify with PKCE to search artists and show their top tracks.
+- Pull artist logos/artwork from TheAudioDB where available.
 
 ## Run Locally
 
@@ -27,6 +28,10 @@ VITE_SPOTIFY_CLIENT_ID=your_client_id_here
 ```
 
 Use `http://127.0.0.1:5173/` as the local redirect URI while developing.
+
+## Artwork
+
+Artist logos are looked up from TheAudioDB at runtime and cached in localStorage. The Download Festival logo is included from Wikimedia Commons.
 
 ## GitHub Pages
 
