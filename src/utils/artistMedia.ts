@@ -20,7 +20,7 @@ let lastRequestAt = 0;
 const normaliseName = (value: string) =>
   value
     .normalize("NFKD")
-    .replace(/[øØ]/g, "o")
+    .replace(/[\u00f8\u00d8]/g, "o")
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, " ")

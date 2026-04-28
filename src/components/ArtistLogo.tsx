@@ -3,6 +3,7 @@ import type { ArtistArtwork } from "../types";
 import { getArtistArtwork } from "../utils/artistMedia";
 
 interface ArtistLogoProps {
+  artistId: string;
   artistName: string;
   searchName?: string;
 }
@@ -17,10 +18,16 @@ const getInitials = (artistName: string) =>
     .join("")
     .toUpperCase();
 
-export const ArtistLogo = ({ artistName, searchName }: ArtistLogoProps) => {
+const getLineupCropUrl = (artistId: string) =>
+  `${import.meta.env.BASE_URL}artist-lineup-crops/${artistId}.jpg`;
+
+export const ArtistLogo = ({ artistId, artistName, searchName }: ArtistLogoProps) => {
   const [artwork, setArtwork] = useState<ArtistArtwork>();
+  const [lineupCropFailed, setLineupCropFailed] = useState(false);
+  const [imageIndex, setImageIndex] = useState(0);
   const [shouldLoad, setShouldLoad] = useState(false);
   const logoRef = useRef<HTMLDivElement | null>(null);
+  const lineupCropUrl = getLineupCropUrl(artistId);
 
   useEffect(() => {
     const element = logoRef.current;
@@ -49,7 +56,7 @@ export const ArtistLogo = ({ artistName, searchName }: ArtistLogoProps) => {
   }, []);
 
   useEffect(() => {
-    if (!shouldLoad) {
+    if (!shouldLoad || !lineupCropFailed) {
       return;
     }
 
@@ -64,14 +71,35 @@ export const ArtistLogo = ({ artistName, searchName }: ArtistLogoProps) => {
     return () => {
       cancelled = true;
     };
-  }, [artistName, searchName, shouldLoad]);
+  }, [artistName, lineupCropFailed, searchName, shouldLoad]);
 
-  const imageUrl = artwork?.logoUrl || artwork?.imageUrl;
+  useEffect(() => {
+    setLineupCropFailed(false);
+    setImageIndex(0);
+  }, [artistId]);
+
+  const imageCandidates = lineupCropFailed
+    ? [artwork?.logoUrl, artwork?.imageUrl].filter((value): value is string => Boolean(value))
+    : [lineupCropUrl];
+  const imageUrl = imageCandidates[imageIndex];
 
   return (
     <div className={`artist-logo ${imageUrl ? "has-image" : ""}`} ref={logoRef}>
       {imageUrl ? (
-        <img src={imageUrl} alt="" loading="lazy" />
+        <img
+          src={imageUrl}
+          alt=""
+          loading="lazy"
+          onError={() => {
+            if (!lineupCropFailed) {
+              setLineupCropFailed(true);
+              setImageIndex(0);
+              return;
+            }
+
+            setImageIndex((current) => current + 1);
+          }}
+        />
       ) : (
         <span>{getInitials(artistName)}</span>
       )}

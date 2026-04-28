@@ -36,7 +36,7 @@ export const ArtistCard = ({
             title={artist.name}
             to={`/artist/${artist.id}`}
           >
-            <ArtistLogo artistName={artist.name} searchName={artist.logoSearchName} />
+            <ArtistLogo artistId={artist.id} artistName={artist.name} searchName={artist.logoSearchName} />
             <span className="artist-name-text">{artist.name}</span>
             <ExternalLink size={15} aria-hidden="true" />
           </Link>
