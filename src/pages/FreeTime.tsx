@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArtistCard } from "../components/ArtistCard";
 import { festivalDays, lineup } from "../data/lineup";
-import type { Intent, IntentMap, SetTimeMap } from "../types";
+import type { Artist, Intent, IntentMap, SetTimeMap } from "../types";
 import { loadFreeTimeWindow, saveFreeTimeWindow } from "../utils/localStorage";
 import {
   computeFreeGaps,
@@ -18,6 +18,11 @@ interface FreeTimeProps {
   intents: IntentMap;
   setTimes: SetTimeMap;
   onIntentChange: (artistId: string, intent: Intent) => void;
+}
+
+interface GapBookend {
+  artist: Artist;
+  time: string;
 }
 
 export const FreeTime = ({ intents, setTimes, onIntentChange }: FreeTimeProps) => {
@@ -49,7 +54,24 @@ export const FreeTime = ({ intents, setTimes, onIntentChange }: FreeTimeProps) =
           return start < gap.end && end > gap.start;
         });
 
-        return { ...gap, playing };
+        const comingFrom: GapBookend | null = (() => {
+          const artist = selectedOnDay.find((a) => {
+            const t = getEffectiveTime(a, setTimes);
+            return timeToMinutes(t.end) === gap.start;
+          }) ?? null;
+          return artist ? { artist, time: minutesToTime(gap.start) } : null;
+        })();
+
+        const goingTo: GapBookend | null = (() => {
+          if (gap.end === windowEndMins) return null;
+          const artist = selectedOnDay.find((a) => {
+            const t = getEffectiveTime(a, setTimes);
+            return timeToMinutes(t.start) === gap.end;
+          }) ?? null;
+          return artist ? { artist, time: minutesToTime(gap.end) } : null;
+        })();
+
+        return { ...gap, playing, comingFrom, goingTo };
       });
 
       return { day, gaps: gapsWithArtists, selectedCount: selectedOnDay.length };
@@ -122,6 +144,14 @@ export const FreeTime = ({ intents, setTimes, onIntentChange }: FreeTimeProps) =
 
                 return (
                   <div className="gap-card" key={`${gap.start}-${gap.end}`}>
+                    {gap.comingFrom && (
+                      <div className="gap-bookend gap-bookend--from">
+                        <span>Finishing</span>
+                        <strong>{gap.comingFrom.artist.name}</strong>
+                        <span>ends {gap.comingFrom.time}</span>
+                      </div>
+                    )}
+
                     <div className="gap-card__header">
                       <strong>{minutesToTime(gap.start)} – {endLabel}</strong>
                       <span>{duration} free</span>
@@ -144,6 +174,14 @@ export const FreeTime = ({ intents, setTimes, onIntentChange }: FreeTimeProps) =
                             onIntentChange={onIntentChange}
                           />
                         ))}
+                      </div>
+                    )}
+
+                    {gap.goingTo && (
+                      <div className="gap-bookend gap-bookend--to">
+                        <span>Heading to</span>
+                        <strong>{gap.goingTo.artist.name}</strong>
+                        <span>starts {gap.goingTo.time}</span>
                       </div>
                     )}
                   </div>

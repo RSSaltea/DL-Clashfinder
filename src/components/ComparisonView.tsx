@@ -178,7 +178,19 @@ export const ComparisonView = ({
           return start < gap.end && end > gap.start;
         });
 
-        return { ...gap, playing };
+        const comingFrom = uniqueGroupArtists.find((a) => {
+          const t = getEffectiveTime(a, combinedSetTimes);
+          return timeToMinutes(t.end) === gap.start;
+        }) ?? null;
+
+        const goingTo = gap.end === windowEndMins
+          ? null
+          : uniqueGroupArtists.find((a) => {
+              const t = getEffectiveTime(a, combinedSetTimes);
+              return timeToMinutes(t.start) === gap.end;
+            }) ?? null;
+
+        return { ...gap, playing, comingFrom, goingTo };
       });
 
       return { day, gaps: gapsWithPlaying };
@@ -351,6 +363,13 @@ export const ComparisonView = ({
 
                     return (
                       <div className="gap-card" key={`${gap.start}-${gap.end}`}>
+                        {gap.comingFrom && (
+                          <div className="gap-bookend gap-bookend--from">
+                            <span>Finishing</span>
+                            <strong>{gap.comingFrom.name}</strong>
+                            <span>ends {minutesToTime(gap.start)}</span>
+                          </div>
+                        )}
                         <div className="gap-card__header">
                           <strong>{minutesToTime(gap.start)} – {endLabel}</strong>
                           <span>{duration} free</span>
@@ -368,6 +387,13 @@ export const ComparisonView = ({
                                 </div>
                               );
                             })}
+                          </div>
+                        )}
+                        {gap.goingTo && (
+                          <div className="gap-bookend gap-bookend--to">
+                            <span>Heading to</span>
+                            <strong>{gap.goingTo.name}</strong>
+                            <span>starts {minutesToTime(gap.end)}</span>
                           </div>
                         )}
                       </div>

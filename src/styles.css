@@ -879,6 +879,47 @@ p {
   white-space: nowrap;
 }
 
+.gap-bookend {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+  padding: 0.4rem 0.6rem;
+  border-radius: 6px;
+}
+
+.gap-bookend span {
+  color: var(--muted);
+}
+
+.gap-bookend strong {
+  flex: 1 1 auto;
+}
+
+.gap-bookend--from {
+  background: rgba(229, 72, 57, 0.1);
+  border: 1px solid rgba(229, 72, 57, 0.2);
+}
+
+.gap-bookend--from::before {
+  content: "✓";
+  color: var(--red);
+  font-weight: 800;
+  flex: 0 0 auto;
+}
+
+.gap-bookend--to {
+  background: rgba(117, 196, 111, 0.1);
+  border: 1px solid rgba(117, 196, 111, 0.2);
+}
+
+.gap-bookend--to::before {
+  content: "→";
+  color: var(--green);
+  font-weight: 800;
+  flex: 0 0 auto;
+}
+
 .app-footer {
   display: flex;
   align-items: center;
