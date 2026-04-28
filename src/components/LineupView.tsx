@@ -10,7 +10,7 @@ type DayFilter = "all" | DayId;
 type StageFilter = "all" | StageId;
 type StatusFilter = "all" | "selected" | Intent;
 
-const downloadLogoUrl = `${import.meta.env.BASE_URL}download-festival-logo.svg`;
+const downloadLogoUrl = `${import.meta.env.BASE_URL}download-logo.png`;
 
 interface LineupViewProps {
   intents: IntentMap;

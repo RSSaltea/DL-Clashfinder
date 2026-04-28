@@ -4,7 +4,6 @@ import type { Artist, SpotifyArtistBundle } from "../types";
 import {
   disconnectSpotify,
   getArtistTopTracks,
-  getSpotifyArtistEmbedUrl,
   getSpotifySearchUrl,
   getSpotifyTrackEmbedUrl,
   hasSpotifyClientId,
@@ -22,6 +21,7 @@ export const SpotifyPanel = ({ artist }: SpotifyPanelProps) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const configured = hasSpotifyClientId();
+  const topTracks = bundle?.tracks.slice(0, 5) ?? [];
 
   useEffect(() => {
     const updateConnection = () => setConnected(isSpotifyConnected());
@@ -90,27 +90,22 @@ export const SpotifyPanel = ({ artist }: SpotifyPanelProps) => {
       </div>
 
       {!configured && (
-        <div className="empty-state tight">
+        <div className="spotify-connect-card">
           <Music2 size={24} />
-          <h3>Spotify setup needed</h3>
-          <p>Add your Spotify app Client ID in `.env.local` to enable automatic artist search and top tracks.</p>
-          {artist.spotifyArtistId && (
-            <iframe
-              className="spotify-embed"
-              title={`${artist.name} on Spotify`}
-              src={getSpotifyArtistEmbedUrl(artist.spotifyArtistId)}
-              allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-              loading="lazy"
-            />
-          )}
+          <div>
+            <h3>Spotify setup needed</h3>
+            <p>Add your Spotify app Client ID in `.env.local` to enable top 5 track embeds.</p>
+          </div>
         </div>
       )}
 
       {configured && !connected && (
-        <div className="empty-state tight">
+        <div className="spotify-connect-card">
           <Headphones size={24} />
-          <h3>Connect Spotify</h3>
-          <p>Sign in once to fetch artists and their most played tracks through Spotify's API.</p>
+          <div>
+            <h3>Top 5 songs</h3>
+            <p>Connect once to load Spotify's top tracks for this artist.</p>
+          </div>
           <button type="button" className="primary-button" onClick={handleConnect}>
             <Headphones size={18} />
             Connect Spotify
@@ -143,7 +138,7 @@ export const SpotifyPanel = ({ artist }: SpotifyPanelProps) => {
 
           {bundle && (
             <div className="spotify-results">
-              <div className="spotify-artist">
+              <div className="spotify-artist spotify-artist--compact">
                 {bundle.artist.imageUrl && <img src={bundle.artist.imageUrl} alt="" />}
                 <div>
                   <h3>{bundle.artist.name}</h3>
@@ -154,24 +149,19 @@ export const SpotifyPanel = ({ artist }: SpotifyPanelProps) => {
               </div>
 
               <div className="track-embed-list">
-                {bundle.tracks.slice(0, 5).map((track) => (
+                {topTracks.map((track) => (
                   <iframe
                     key={track.id}
                     className="spotify-track"
                     title={`${track.name} by ${bundle.artist.name}`}
                     src={getSpotifyTrackEmbedUrl(track.id)}
+                    width="100%"
+                    height="152"
+                    frameBorder="0"
+                    allowFullScreen
                     allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
                     loading="lazy"
                   />
-                ))}
-              </div>
-
-              <div className="compact-list">
-                {bundle.tracks.map((track) => (
-                  <a key={track.id} href={track.spotifyUrl} target="_blank" rel="noreferrer">
-                    <strong>{track.name}</strong>
-                    <span>{track.album} · popularity {track.popularity}</span>
-                  </a>
                 ))}
               </div>
             </div>

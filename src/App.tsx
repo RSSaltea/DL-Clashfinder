@@ -19,7 +19,7 @@ const ScrollToTop = () => {
   return null;
 };
 
-const downloadLogoUrl = `${import.meta.env.BASE_URL}download-festival-logo.svg`;
+const downloadLogoUrl = `${import.meta.env.BASE_URL}download-logo.png`;
 
 const AppRoutes = () => {
   const festivalState = useFestivalState();
