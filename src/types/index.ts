@@ -26,6 +26,7 @@ export interface Artist {
   defaultStart?: string;
   defaultEnd?: string;
   spotifyArtistId?: string;
+  spotifyTrackIds?: string[];
 }
 
 export interface ArtistSetTime {
