@@ -1,11 +1,9 @@
 import type { Artist, ArtistSetTime, SetTimeMap } from "../types";
 
-export const getEffectiveTime = (artist: Artist, setTimes: SetTimeMap): ArtistSetTime => {
-  const override = setTimes[artist.id];
-
+export const getEffectiveTime = (artist: Artist, _setTimes: SetTimeMap): ArtistSetTime => {
   return {
-    start: override?.start ?? artist.defaultStart ?? "",
-    end: override?.end ?? artist.defaultEnd ?? "",
+    start: artist.defaultStart ?? "",
+    end: artist.defaultEnd ?? "",
   };
 };
 

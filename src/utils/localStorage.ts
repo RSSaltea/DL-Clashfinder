@@ -1,8 +1,7 @@
-import type { Intent, IntentMap, SetTimeMap } from "../types";
+import type { Intent, IntentMap } from "../types";
 
 const storageKeys = {
   intents: "download-clash-finder:intents",
-  setTimes: "download-clash-finder:set-times",
   profileName: "download-clash-finder:profile-name",
 };
 
@@ -23,13 +22,6 @@ export const loadIntentMap = (): IntentMap =>
 
 export const saveIntentMap = (value: IntentMap) => {
   window.localStorage.setItem(storageKeys.intents, JSON.stringify(value));
-};
-
-export const loadSetTimes = (): SetTimeMap =>
-  parseJson<SetTimeMap>(window.localStorage.getItem(storageKeys.setTimes), {});
-
-export const saveSetTimes = (value: SetTimeMap) => {
-  window.localStorage.setItem(storageKeys.setTimes, JSON.stringify(value));
 };
 
 export const loadProfileName = () =>

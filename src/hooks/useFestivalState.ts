@@ -1,27 +1,21 @@
 import { useEffect, useMemo, useState } from "react";
-import type { ArtistSetTime, Intent, IntentMap, SetTimeMap } from "../types";
+import type { Intent, IntentMap, SetTimeMap } from "../types";
 import {
   getNextIntent,
   loadIntentMap,
   loadProfileName,
-  loadSetTimes,
   saveIntentMap,
   saveProfileName,
-  saveSetTimes,
 } from "../utils/localStorage";
 
 export const useFestivalState = () => {
   const [intents, setIntents] = useState<IntentMap>(() => loadIntentMap());
-  const [setTimes, setSetTimes] = useState<SetTimeMap>(() => loadSetTimes());
   const [profileName, setProfileNameState] = useState(() => loadProfileName());
+  const setTimes = useMemo<SetTimeMap>(() => ({}), []);
 
   useEffect(() => {
     saveIntentMap(intents);
   }, [intents]);
-
-  useEffect(() => {
-    saveSetTimes(setTimes);
-  }, [setTimes]);
 
   useEffect(() => {
     saveProfileName(profileName);
@@ -44,22 +38,6 @@ export const useFestivalState = () => {
     });
   };
 
-  const updateSetTime = (artistId: string, value: ArtistSetTime) => {
-    setSetTimes((current) => {
-      const next = { ...current };
-      const start = value.start ?? "";
-      const end = value.end ?? "";
-
-      if (!start && !end) {
-        delete next[artistId];
-      } else {
-        next[artistId] = { start, end };
-      }
-
-      return next;
-    });
-  };
-
   return {
     intents,
     selectedArtistIds,
@@ -67,7 +45,6 @@ export const useFestivalState = () => {
     setIntents,
     setProfileName: setProfileNameState,
     setTimes,
-    updateSetTime,
     profileName,
   };
 };

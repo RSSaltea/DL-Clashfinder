@@ -13,16 +13,16 @@ Build a mobile-first React + TypeScript GitHub Pages app where users can browse 
 3. Extract festival lineup from image and create `data/lineup.ts` with structure:
    - Festival data: stages (Apex, Opus, Avalanche, Dogtooth)
    - Days: Fri 12 Jun, Sat 13 Jun, Sun 14 Jun
-   - Artists: stage, day, start time, end time (user-editable), link to artist page
+   - Artists: stage, day, start time, end time (edited in `src/data/lineup.ts`), link to artist page
 4. Create TypeScript types for: Artist, Stage, Day, Favorite, Export
-5. Set up localStorage management utilities
+5. Set up localStorage management utilities for user favourites
 
 ### Phase 2: Lineup Browser & Favorites System
 6. Create main LineupView component displaying all artists by stage + day
 7. Implement favorite/unfavorite toggle (persist to localStorage)
 8. Add filters: by day, by stage, by favorite status
 9. Responsive grid/list layout (mobile-first)
-10. Manually input set times (user enters start/end for each artist) — save to localStorage or session state
+10. Store set times in `src/data/lineup.ts` and display them as read-only in the UI
 
 ### Phase 3: Clash Detection Engine
 11. Create clash detection utility that identifies artists playing simultaneously
@@ -41,7 +41,7 @@ Build a mobile-first React + TypeScript GitHub Pages app where users can browse 
 18. Add "Add to Favorites" button on detail page
 
 ### Phase 5: Export/Import & Comparison
-19. Create export function: converts favorites + set times to JSON
+19. Create export function: converts favourites to JSON
 20. Create import function: file upload to parse JSON
 21. Build ComparisonView component:
     - Load both user's favorites and imported file
@@ -63,7 +63,7 @@ Build a mobile-first React + TypeScript GitHub Pages app where users can browse 
 ### Core Structure
 - `src/types/index.ts` — TypeScript interfaces (Artist, Favorite, Export, Stage, etc.)
 - `src/data/lineup.ts` — Festival lineup with all stages and artists
-- `src/utils/localStorage.ts` — Favorite and set time persistence
+- `src/utils/localStorage.ts` — Favourite persistence
 - `src/utils/clash.ts` — Clash detection logic
 - `src/utils/spotify.ts` — Spotify API integration
 
@@ -73,7 +73,6 @@ Build a mobile-first React + TypeScript GitHub Pages app where users can browse 
 - `src/components/ArtistDetailPage.tsx` — Full page with Spotify player
 - `src/components/ClashView.tsx` — View showing all time conflicts
 - `src/components/ComparisonView.tsx` — Compare two exports
-- `src/components/SetTimeInput.tsx` — Dialog to manually enter start/end times
 
 ### Routes & Pages
 - `src/pages/Home.tsx` — Main entry with lineup
@@ -107,7 +106,7 @@ Build a mobile-first React + TypeScript GitHub Pages app where users can browse 
 
 - **Framework**: React + TypeScript (type safety, modular components, ecosystem support)
 - **Spotify**: Free Web API (no server needed, no authentication required for public data)
-- **Storage**: localStorage for favorites + set times (no backend, pure client-side)
+- **Storage**: localStorage for favourites (no backend, pure client-side)
 - **Export Format**: JSON (human-readable, easy to version control or share)
 - **Clash Definition**: Any overlap in start/end times = clash (even partial)
 - **Comparison Scope**: File upload (not real-time URL sharing) for simplicity and privacy
@@ -116,8 +115,7 @@ Build a mobile-first React + TypeScript GitHub Pages app where users can browse 
 
 ## Further Considerations
 
-1. **Set Times Entry UX** — Once you manually add times for all artists, should times be locked (read-only) or editable per-session? 
-   - *Recommendation*: Editable per-session, but default to stored times. Users might want different start times based on travel, setup, etc.
+1. **Set Times Entry UX** — Set times are locked in the UI and edited in `src/data/lineup.ts`.
 
 2. **Spotify API Rate Limiting** — Free Spotify API has rate limits. Should we cache results locally?
    - *Recommendation*: Cache artist search results in localStorage to reduce API calls.

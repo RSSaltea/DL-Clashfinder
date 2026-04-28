@@ -74,7 +74,6 @@ const AppRoutes = () => {
             <Home
               intents={festivalState.intents}
               onIntentChange={festivalState.setArtistIntent}
-              onTimeChange={festivalState.updateSetTime}
               setTimes={festivalState.setTimes}
             />
           }
@@ -85,7 +84,6 @@ const AppRoutes = () => {
             <ArtistDetail
               intents={festivalState.intents}
               onIntentChange={festivalState.setArtistIntent}
-              onTimeChange={festivalState.updateSetTime}
               setTimes={festivalState.setTimes}
             />
           }

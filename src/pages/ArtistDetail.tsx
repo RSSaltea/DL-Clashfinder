@@ -1,10 +1,9 @@
 import { ArrowLeft, AlertTriangle } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { IntentButtons } from "../components/IntentButtons";
-import { SetTimeInput } from "../components/SetTimeInput";
 import { SpotifyPanel } from "../components/SpotifyPanel";
 import { getArtistById, getDay, getStage, lineup } from "../data/lineup";
-import type { ArtistSetTime, Intent, IntentMap, SetTimeMap } from "../types";
+import type { Intent, IntentMap, SetTimeMap } from "../types";
 import { getClashesForArtist } from "../utils/clash";
 import { formatTimeRange, getEffectiveTime } from "../utils/time";
 
@@ -12,13 +11,11 @@ interface ArtistDetailProps {
   intents: IntentMap;
   setTimes: SetTimeMap;
   onIntentChange: (artistId: string, intent: Intent) => void;
-  onTimeChange: (artistId: string, value: ArtistSetTime) => void;
 }
 
 export const ArtistDetail = ({
   intents,
   onIntentChange,
-  onTimeChange,
   setTimes,
 }: ArtistDetailProps) => {
   const { artistId } = useParams();
@@ -62,7 +59,7 @@ export const ArtistDetail = ({
       <section className="detail-grid">
         <article className="summary-panel">
           <h2>Set Time</h2>
-          <SetTimeInput value={time} onChange={(value) => onTimeChange(artist.id, value)} />
+          <p className="time-range">{formatTimeRange(time)}</p>
           {clashes.length > 0 && (
             <div className="clash-badge wide">
               <AlertTriangle size={17} />

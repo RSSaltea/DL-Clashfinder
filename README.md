@@ -6,17 +6,28 @@ A better version of Clash Finder for Download Festival 2026 planning.
 
 - Browse the Friday to Sunday arena lineup by day and stage.
 - Mark artists as interested or definite.
-- Manually enter set times and detect clashes.
+- Edit set times in `src/data/lineup.ts` and detect clashes.
 - Export your plan as JSON and import friends' plans for comparison.
 - Open an artist page for every act.
 - Connect Spotify with PKCE to search artists and show their top tracks.
-- Pull artist logos/artwork from TheAudioDB where available.
 
 ## Run Locally
 
 ```bash
 npm install
 npm run dev
+```
+
+## Set Times
+
+Edit set times in `src/data/lineup.ts`. Change an artist string into an object:
+
+```ts
+"Limp Bizkit",
+```
+
+```ts
+{ name: "Limp Bizkit", start: "20:50", end: "22:20" },
 ```
 
 ## Spotify Setup
@@ -28,10 +39,6 @@ VITE_SPOTIFY_CLIENT_ID=your_client_id_here
 ```
 
 Use `http://127.0.0.1:5173/` as the local redirect URI while developing.
-
-## Artwork
-
-Artist logos are looked up from TheAudioDB at runtime and cached in localStorage. The Download Festival logo is included from Wikimedia Commons.
 
 ## GitHub Pages
 

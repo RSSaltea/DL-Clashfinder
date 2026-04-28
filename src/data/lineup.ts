@@ -23,28 +23,46 @@ export const festivalStages: FestivalStage[] = [
 const slugify = (value: string) =>
   value
     .normalize("NFKD")
-    .replace(/[øØ]/g, "o")
+    .replace(/[\u00f8\u00d8]/g, "o")
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/&/g, "and")
     .replace(/[^a-zA-Z0-9]+/g, "-")
     .replace(/^-|-$/g, "")
     .toLowerCase();
 
+type LineupArtistInput =
+  | string
+  | {
+      name: string;
+      start?: string;
+      end?: string;
+      spotifyArtistId?: string;
+    };
+
+// Edit set times here. Example:
+// "Limp Bizkit",
+// becomes:
+// { name: "Limp Bizkit", start: "20:50", end: "22:20" },
 const addArtists = (
   day: DayId,
   stage: StageId,
-  names: string[],
+  entries: LineupArtistInput[],
   startOrder: number,
 ): Artist[] =>
-  names.map((name, index) => ({
-    id: `${day}-${stage}-${slugify(name)}`,
-    name,
-    day,
-    stage,
-    order: startOrder + index,
-    defaultStart: "",
-    defaultEnd: "",
-  }));
+  entries.map((entry, index) => {
+    const details = typeof entry === "string" ? { name: entry } : entry;
+
+    return {
+      id: `${day}-${stage}-${slugify(details.name)}`,
+      name: details.name,
+      day,
+      stage,
+      order: startOrder + index,
+      defaultStart: details.start ?? "",
+      defaultEnd: details.end ?? "",
+      spotifyArtistId: details.spotifyArtistId,
+    };
+  });
 
 export const lineup: Artist[] = [
   ...addArtists("friday", "apex", [

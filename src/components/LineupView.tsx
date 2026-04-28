@@ -16,7 +16,6 @@ interface LineupViewProps {
   intents: IntentMap;
   setTimes: SetTimeMap;
   onIntentChange: (artistId: string, intent: Intent) => void;
-  onTimeChange: (artistId: string, value: { start?: string; end?: string }) => void;
 }
 
 const artistMatchesStatus = (artist: Artist, intents: IntentMap, status: StatusFilter) => {
@@ -31,7 +30,7 @@ const artistMatchesStatus = (artist: Artist, intents: IntentMap, status: StatusF
   return intents[artist.id] === status;
 };
 
-export const LineupView = ({ intents, onIntentChange, onTimeChange, setTimes }: LineupViewProps) => {
+export const LineupView = ({ intents, onIntentChange, setTimes }: LineupViewProps) => {
   const [dayFilter, setDayFilter] = useState<DayFilter>("all");
   const [stageFilter, setStageFilter] = useState<StageFilter>("all");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
@@ -198,7 +197,6 @@ export const LineupView = ({ intents, onIntentChange, onTimeChange, setTimes }: 
                                 clashes={clashMap.get(artist.id) ?? []}
                                 intent={intents[artist.id]}
                                 onIntentChange={onIntentChange}
-                                onTimeChange={onTimeChange}
                                 time={getEffectiveTime(artist, setTimes)}
                               />
                             ))}
