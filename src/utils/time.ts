@@ -22,9 +22,9 @@ export const timeToMinutes = (value?: string) => {
   return hours * 60 + minutes;
 };
 
-export const formatTimeRange = (time: ArtistSetTime) => {
+export const formatTimeRange = (time: ArtistSetTime, fallback = "Time TBC") => {
   if (!hasCompleteTime(time)) {
-    return "Time TBC";
+    return fallback;
   }
 
   return `${time.start} to ${time.end}`;

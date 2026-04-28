@@ -39,6 +39,7 @@ export const ArtistDetail = ({
   const stage = getStage(artist.stage);
   const time = getEffectiveTime(artist, setTimes);
   const clashes = getClashesForArtist(artist, lineup, setTimes);
+  const dayLabel = day?.label ?? "Time TBC";
 
   return (
     <main className="page-shell artist-detail">
@@ -51,7 +52,7 @@ export const ArtistDetail = ({
         <div>
           <p className="eyebrow">{day?.label} · {stage?.name}</p>
           <h1>{artist.name}</h1>
-          <p>{formatTimeRange(time)}</p>
+          <p>{formatTimeRange(time, dayLabel)}</p>
         </div>
         <IntentButtons intent={intents[artist.id]} onChange={(intent) => onIntentChange(artist.id, intent)} />
       </section>
@@ -59,7 +60,7 @@ export const ArtistDetail = ({
       <section className="detail-grid">
         <article className="summary-panel">
           <h2>Set Time</h2>
-          <p className="time-range">{formatTimeRange(time)}</p>
+          <p className="time-range">{formatTimeRange(time, dayLabel)}</p>
           {clashes.length > 0 && (
             <div className="clash-badge wide">
               <AlertTriangle size={17} />
