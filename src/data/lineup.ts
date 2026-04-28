@@ -120,8 +120,8 @@ export const lineup: Artist[] = [
     { name: "Mastodon", start: "18:45", end: "19:30", spotifyTrackIds: ["3jagGO7eHHuaD53ibehkux", "6EF0xhfKtQNqUPz2mnE5BD", "4Ynr1SPCeUI0W0YPeSFSIK", "1dfHpGeaXunLRNvzSZOZtc", "4Ut80ggQbyiJN2pGCs7VfB"] },
     { name: "Tom Morello", start: "17:35", end: "18:15", spotifyTrackIds: ["44Xyja7xYPlVC6v2CeweSi", "2K7g8dvwkIGgPEYKivmatN", "0lEHnMNNYusZtbon9XyA2W", "2ONPuwAuOVO6RbzKaiowxD", "3PNuq4zUgDMTqdBuGeg50m"] },
     { name: "Social Distortion", start: "16:25", end: "17:05", spotifyTrackIds: ["4Q4w8aRdfhIIEhBututktL", "1IXre3fKPrv3NigaOdMoWU", "4CsTkNvkwQLel6sxQqrXSj", "3hKScGxI28Zor6zJ7JL7aS", "7tZ1sF5HLhqtRO0bITs4lV"] },
-    { name: "The Plot In You", start: "15:30", end: "16:00" },
-    { name: "thrown", start: "14:35", end: "15:05" },
+    { name: "The Plot In You", start: "15:30", end: "16:00", spotifyTrackIds: ["4xDwCYhobDehSBGUmd5H6Y", "06j7eVHrgRSt9eQSWhH3zK", "0ZZCltcOacjI1kY4BnVDjt", "2ciYYljvXw3vJdWi6hkEfS", "13TI2bhTRld8pgk9xM8wm9"] },
+    { name: "thrown", start: "14:35", end: "15:05", spotifyTrackIds: ["1EZ35gYHH03sSYn9f1zpLc", "1S0z4FLaviCksg3qusRhuz", "5Sl5nxwOOREn5pBoZyPomu", "4zkKwwSVUA6pDWL9F8Apky", "7CmuIJZ7tKAw0ZqWpLAVi1"] },
     { name: "Dogstar", start: "13:40", end: "14:10", spotifyTrackIds: ["1PauS2gkdRNIXvuPuANHcf", "1bqiqgU4ELQpw8iU3I8LNH", "7t6a7n23SZQ5A5OuXYu3uO", "4QGGLjKe2TgPdBKVH6FKfR", "1obLPKC4pXRJCEDEizYl6l"] },
     { name: "Mammoth", start: "12:40", end: "13:15", spotifyTrackIds: ["7g8Xffd97LHH8ZeByxDiRB", "37EMTlg8KIQRED2lsxuNhj", "1oxh5M17Q5rCGnMvIgxfCa", "6O07S5jyxG1e2hri4pcIjY", "1SH9wSHJfwgYNcR6r2OZ8G"] },
     { name: "Catch Your Breath", start: "11:50", end: "12:15", spotifyTrackIds: ["0ZL5gQSDKEC7TjeoXA0HuR", "4HcEbEktrop4XPX02iULMM", "7qqVbi9pbCJBTxYKYwKBxY", "7mebPdG8uH4mZQnpn8i4yG", "0Api4AdCfRrGYhj8AeSjNp"] },
@@ -164,7 +164,7 @@ export const lineup: Artist[] = [
   ], 900),
   ...addArtists("friday", "dogtooth", [
     { name: "Cavalera", start: "21:50", end: "22:50", spotifyTrackIds: ["3bSnE01X7tezLVR8ppZjvB", "1qVRv7ydm4sMj9aX5VYuN4", "5WElL3I3ukIPCP2pXjH2r5", "6lcsIkE5EnINvYJg3PczMj", "1TkZ5zd4E7GTaFCvV5VpdS"] },
-    { name: "Corrosion of Conformity", start: "20:45", end: "21:20" },
+    { name: "Corrosion of Conformity", start: "20:45", end: "21:20", spotifyTrackIds: ["6g48vpikqU2atsrDXdGzKo", "3CtKSQyQPdzA2u7n9tjJw2", "5Z7U8TRHAlX2uL2lVYv5Wa", "2tI78SEx3HpdqSdEG8G00L", "0Mj1guCpGjbw6pqBbAbfGa"] },
     { name: "BAND-MAID", start: "19:40", end: "20:15", spotifyTrackIds: ["130dsYbbXp9jQnETiJ7axI", "6Nawx5sqYFIbcx2qQgrA67", "2VxoDPnyxNF976DK9rlVU6", "0S6wuDXHdmsKetgEXEMgUh", "6RmznWIj65w4YPTcfVfmpt"] },
     { name: "Stampin' Ground", start: "18:45", end: "19:15", spotifyTrackIds: ["533jB4NDINZWGi6aZ2hqaP", "1reBWAuhOivffb47nXZQSC", "60hTifKRAW1FlInK6bH0oq", "7n4iVcgzS3iUedqk6u2HxV", "7GrGeAdjzsgbpitlLoId9k"] },
     { name: "THE PRIMALS", start: "17:50", end: "18:20", spotifyTrackIds: ["6g4uRXMevjSIk7eLfupCXw", "13j5CJZFeTRbJxPCLEXmv2", "6FP1T9IpMJTqI8Ykn9xGDn", "285aijRH1PVMZ2pqMcwEUM", "5ZMW1Tk9leLbRHRHMxuuCP"] },
@@ -200,7 +200,7 @@ export const lineup: Artist[] = [
     { name: "Decessus", start: "13:20", end: "13:45", spotifyTrackIds: ["2pjlasonZyNgWiZGNlUa7b", "3QOpROhrfN6aYkqdoVy5lm", "6KXCETCc2fHN9D3hvIaFgn", "2DsK260zUUC57zICpi00Ce", "0kQji4Th3U4MdBJLuojrKr"] },
     { name: "Wayside", start: "12:30", end: "12:55", spotifyTrackIds: ["1ZbV4k4Wmlak6USIovaob2", "4DzKsnD6cZyI9Pc53cbBD6", "26haQh7H28301Z7petISZ4", "2540RWLyWikRQSg0HAoE3P", "7Fg6PgHG94PKxcN0cNRcJP"] },
     { name: "Private School", start: "11:45", end: "12:05", spotifyTrackIds: ["0Nig5iLfz3PGc2N1arz1j8", "144ItIFIWau6h80Glf6eUw", "6QysPkrizgWQRtZMYnkyfR", "5Who33byRO15WEPSuO83IM", "4O8btG65d0vfUcfkuPDj5w"] },
-    { name: "Spitting Glass", start: "11:00", end: "11:20" },
+    { name: "Spitting Glass", start: "11:00", end: "11:20", spotifyTrackIds: ["3YljlwPWa7J7kxl1gm2NQL"] },
   ], 1200),
 ];
 
