@@ -1,0 +1,281 @@
+import { Download, FileJson, Trash2, Upload } from "lucide-react";
+import { ChangeEvent, useMemo, useState } from "react";
+import { artistById, festivalDays, getStage, lineup } from "../data/lineup";
+import type { Artist, FestivalExport, IntentMap, SetTimeMap } from "../types";
+import { createExportPayload, downloadJson } from "../utils/export";
+import { parseImportedPlan } from "../utils/import";
+import { getOverlapRange, getEffectiveTime } from "../utils/time";
+
+interface ComparisonViewProps {
+  intents: IntentMap;
+  profileName: string;
+  setProfileName: (value: string) => void;
+  setTimes: SetTimeMap;
+}
+
+interface ProfilePlan {
+  id: string;
+  name: string;
+  intents: IntentMap;
+  setTimes: SetTimeMap;
+}
+
+const selectedIdsFor = (plan: ProfilePlan) => new Set(Object.keys(plan.intents));
+
+const sortArtists = (artists: Artist[]) =>
+  [...artists].sort((a, b) => {
+    if (a.day !== b.day) {
+      return a.day.localeCompare(b.day);
+    }
+
+    return a.order - b.order;
+  });
+
+export const ComparisonView = ({
+  intents,
+  profileName,
+  setProfileName,
+  setTimes,
+}: ComparisonViewProps) => {
+  const [imports, setImports] = useState<FestivalExport[]>([]);
+  const [error, setError] = useState("");
+
+  const profiles = useMemo<ProfilePlan[]>(() => [
+    { id: "local", name: profileName || "Me", intents, setTimes },
+    ...imports.map((item, index) => ({
+      id: `${item.profileName}-${index}`,
+      name: item.profileName,
+      intents: item.intents,
+      setTimes: item.setTimes,
+    })),
+  ], [imports, intents, profileName, setTimes]);
+
+  const combinedSetTimes = useMemo(
+    () => profiles.reduce<SetTimeMap>((acc, profile) => ({ ...acc, ...profile.setTimes }), {}),
+    [profiles],
+  );
+
+  const groupRows = useMemo(() => {
+    const artistIds = new Set(profiles.flatMap((profile) => Object.keys(profile.intents)));
+
+    return Array.from(artistIds)
+      .map((artistId) => {
+        const artist = artistById.get(artistId);
+
+        if (!artist) {
+          return undefined;
+        }
+
+        const supporters = profiles.filter((profile) => profile.intents[artistId]);
+        const definiteSupporters = supporters.filter((profile) => profile.intents[artistId] === "definite");
+
+        return {
+          artist,
+          supporters,
+          definiteSupporters,
+        };
+      })
+      .filter((row): row is NonNullable<typeof row> => Boolean(row))
+      .sort((a, b) => {
+        if (b.definiteSupporters.length !== a.definiteSupporters.length) {
+          return b.definiteSupporters.length - a.definiteSupporters.length;
+        }
+
+        if (b.supporters.length !== a.supporters.length) {
+          return b.supporters.length - a.supporters.length;
+        }
+
+        return a.artist.order - b.artist.order;
+      });
+  }, [profiles]);
+
+  const mutualWithMe = useMemo(() => {
+    const localSelected = selectedIdsFor(profiles[0]);
+    const friendSelected = new Set(profiles.slice(1).flatMap((profile) => Object.keys(profile.intents)));
+
+    return sortArtists(
+      Array.from(localSelected)
+        .filter((artistId) => friendSelected.has(artistId))
+        .map((artistId) => artistById.get(artistId))
+        .filter((artist): artist is Artist => Boolean(artist)),
+    );
+  }, [profiles]);
+
+  const groupClashes = useMemo(() => {
+    const rows = groupRows.map((row) => row.artist);
+    const clashes: Array<{
+      id: string;
+      first: Artist;
+      second: Artist;
+      start: string;
+      end: string;
+      firstSupporters: string;
+      secondSupporters: string;
+    }> = [];
+
+    rows.forEach((first, index) => {
+      rows.slice(index + 1).forEach((second) => {
+        if (first.day !== second.day) {
+          return;
+        }
+
+        const overlap = getOverlapRange(
+          getEffectiveTime(first, combinedSetTimes),
+          getEffectiveTime(second, combinedSetTimes),
+        );
+
+        if (!overlap) {
+          return;
+        }
+
+        const firstRow = groupRows.find((row) => row.artist.id === first.id);
+        const secondRow = groupRows.find((row) => row.artist.id === second.id);
+
+        clashes.push({
+          id: `${first.id}-${second.id}`,
+          first,
+          second,
+          start: overlap.start,
+          end: overlap.end,
+          firstSupporters: firstRow?.supporters.map((profile) => profile.name).join(", ") ?? "",
+          secondSupporters: secondRow?.supporters.map((profile) => profile.name).join(", ") ?? "",
+        });
+      });
+    });
+
+    return clashes.slice(0, 40);
+  }, [combinedSetTimes, groupRows]);
+
+  const handleImport = async (event: ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files ?? []);
+    setError("");
+
+    try {
+      const parsed = await Promise.all(files.map(parseImportedPlan));
+      setImports((current) => [...current, ...parsed]);
+    } catch (importError) {
+      setError(importError instanceof Error ? importError.message : "Import failed.");
+    } finally {
+      event.target.value = "";
+    }
+  };
+
+  const handleExport = () => {
+    downloadJson(createExportPayload(profileName, intents, setTimes));
+  };
+
+  return (
+    <main className="page-shell">
+      <section className="toolbar-band">
+        <div>
+          <p className="eyebrow">Share and decide together</p>
+          <h1>Compare Plans</h1>
+        </div>
+        <button className="primary-button" type="button" onClick={handleExport}>
+          <Download size={18} />
+          Export JSON
+        </button>
+      </section>
+
+      <section className="compare-actions">
+        <label className="text-field">
+          <span>Your name</span>
+          <input value={profileName} onChange={(event) => setProfileName(event.target.value)} />
+        </label>
+        <label className="file-drop">
+          <Upload size={20} />
+          <span>Import friend JSON</span>
+          <input type="file" accept="application/json,.json" multiple onChange={handleImport} />
+        </label>
+      </section>
+
+      {error && <div className="error-banner">{error}</div>}
+
+      {imports.length > 0 && (
+        <section className="import-list" aria-label="Imported plans">
+          {imports.map((item, index) => (
+            <div className="import-pill" key={`${item.profileName}-${item.exportedAt}`}>
+              <FileJson size={16} />
+              <span>{item.profileName}</span>
+              <button
+                type="button"
+                title={`Remove ${item.profileName}`}
+                onClick={() => setImports((current) => current.filter((_, itemIndex) => itemIndex !== index))}
+              >
+                <Trash2 size={15} />
+              </button>
+            </div>
+          ))}
+        </section>
+      )}
+
+      <section className="comparison-grid">
+        <article className="summary-panel">
+          <h2>Mutual Picks</h2>
+          {mutualWithMe.length === 0 ? (
+            <p className="muted">Import a friend plan to see shared artists.</p>
+          ) : (
+            <div className="compact-list">
+              {mutualWithMe.map((artist) => (
+                <div key={artist.id}>
+                  <strong>{artist.name}</strong>
+                  <span>{getStage(artist.stage)?.shortName}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </article>
+
+        <article className="summary-panel">
+          <h2>Group Demand</h2>
+          {groupRows.length === 0 ? (
+            <p className="muted">Mark artists first, then the group ranking appears here.</p>
+          ) : (
+            <div className="compact-list">
+              {groupRows.slice(0, 16).map((row) => (
+                <div key={row.artist.id}>
+                  <strong>{row.artist.name}</strong>
+                  <span>{row.supporters.length} picks · {row.definiteSupporters.length} definite</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </article>
+      </section>
+
+      <section className="day-group">
+        <div className="day-heading">
+          <h2>Group Clashes</h2>
+          <span>{groupClashes.length} shown</span>
+        </div>
+        {groupClashes.length === 0 ? (
+          <div className="empty-state">
+            <h2>No shared clashes yet.</h2>
+            <p>Enter set times and import another plan to compare decisions.</p>
+          </div>
+        ) : (
+          <div className="comparison-grid">
+            {groupClashes.map((clash) => (
+              <article className="clash-card" key={clash.id}>
+                <div className="clash-card__time">
+                  <strong>{clash.start} to {clash.end}</strong>
+                  <span>{festivalDays.find((day) => day.id === clash.first.day)?.shortLabel}</span>
+                </div>
+                <div className="versus-row">
+                  <div>
+                    <h3>{clash.first.name}</h3>
+                    <p>{clash.firstSupporters}</p>
+                  </div>
+                  <div>
+                    <h3>{clash.second.name}</h3>
+                    <p>{clash.secondSupporters}</p>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+    </main>
+  );
+};
