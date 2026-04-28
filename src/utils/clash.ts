@@ -3,6 +3,9 @@ import { getEffectiveTime, getOverlapRange, minutesToTime, timeToMinutes } from 
 
 const DEFAULT_TIGHT_GAP_MINUTES = 10;
 
+export const getClashDecisionId = (firstId: string, secondId: string) =>
+  [firstId, secondId].sort().join("--");
+
 const getTimedBounds = (artist: Artist, setTimes: SetTimeMap) => {
   const time = getEffectiveTime(artist, setTimes);
   const start = timeToMinutes(time.start);
@@ -49,7 +52,7 @@ export const getAllClashes = (artists: Artist[], setTimes: SetTimeMap): ClashPai
       }
 
       clashes.push({
-        id: `${first.id}--${second.id}`,
+        id: getClashDecisionId(first.id, second.id),
         day: first.day,
         first,
         second,

@@ -1,5 +1,5 @@
 import { ComparisonView } from "../components/ComparisonView";
-import type { FestivalExport, IntentMap, SetTimeMap } from "../types";
+import type { ClashDecisionMap, FestivalExport, IntentMap, SetTimeMap } from "../types";
 
 interface CompareProps {
   intents: IntentMap;
@@ -9,6 +9,10 @@ interface CompareProps {
   imports: FestivalExport[];
   onAddImports: (newImports: FestivalExport[]) => void;
   onRemoveImport: (index: number) => void;
+  clashDecisions: ClashDecisionMap;
+  onClashDecisionChange: (clashId: string, artistId: string | undefined) => void;
+  groupCode: string;
+  setGroupCode: (value: string) => void;
 }
 
 export const Compare = (props: CompareProps) => <ComparisonView {...props} />;

@@ -9,7 +9,7 @@ A better version of Clash Finder for Download Festival 2026 planning.
 - Edit set times in `src/data/lineup.ts` and detect clashes.
 - Export your plan as JSON and import friends' plans for comparison.
 - Open an artist page for every act.
-- Let's you view top 5 tracks of every artist.
+- View static Spotify embeds for each artist's top tracks.
 
 ## Run Locally
 
@@ -30,28 +30,18 @@ Edit set times in `src/data/lineup.ts`. Change an artist string into an object:
 { name: "Limp Bizkit", start: "20:50", end: "22:20" },
 ```
 
-## Spotify Setup
+## Spotify Tracks
 
-Spotify Web API calls need a public client ID. This app uses Spotify's PKCE login flow, so do not add a client secret to the frontend.
+Artist pages use static Spotify track IDs from `src/data/lineup.ts`, so visitors do not need to connect a Spotify account.
 
-1. Go to the Spotify Developer Dashboard and create an app.
-2. Copy the app's Client ID.
-3. In the Spotify app settings, add these redirect URIs:
-
-```text
-https://rssaltea.github.io/DL-Clashfinder/
-http://127.0.0.1:5173/
+```ts
+{
+  name: "Limp Bizkit",
+  start: "20:50",
+  end: "22:30",
+  spotifyTrackIds: ["5cZqsjVs6MevCnAkasbEOX"]
+}
 ```
-
-4. Copy `.env.example` to `.env.local` and set:
-
-```bash
-VITE_SPOTIFY_CLIENT_ID=your_client_id_here
-```
-
-Restart `npm run dev` after changing `.env.local`.
-
-If Spotify starts the app in Development Mode, only allowlisted Spotify users can connect until the app has extended quota access.
 
 ## GitHub Pages
 

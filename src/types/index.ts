@@ -38,6 +38,17 @@ export type IntentMap = Record<string, Intent>;
 
 export type SetTimeMap = Record<string, ArtistSetTime>;
 
+export type ClashDecisionMap = Record<string, string>;
+
+export interface ProfilePlan {
+  id: string;
+  name: string;
+  intents: IntentMap;
+  setTimes: SetTimeMap;
+  clashDecisions?: ClashDecisionMap;
+  groupCode?: string;
+}
+
 export interface FestivalExport {
   version: 1;
   exportedAt: string;
@@ -48,6 +59,8 @@ export interface FestivalExport {
   profileName: string;
   intents: IntentMap;
   setTimes: SetTimeMap;
+  clashDecisions?: ClashDecisionMap;
+  groupCode?: string;
 }
 
 export interface ClashPair {

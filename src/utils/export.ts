@@ -1,10 +1,12 @@
 import { festival } from "../data/lineup";
-import type { FestivalExport, IntentMap, SetTimeMap } from "../types";
+import type { ClashDecisionMap, FestivalExport, IntentMap, SetTimeMap } from "../types";
 
 export const createExportPayload = (
   profileName: string,
   intents: IntentMap,
   setTimes: SetTimeMap,
+  clashDecisions: ClashDecisionMap = {},
+  groupCode = "",
 ): FestivalExport => ({
   version: 1,
   exportedAt: new Date().toISOString(),
@@ -15,6 +17,8 @@ export const createExportPayload = (
   profileName: profileName.trim() || "Me",
   intents,
   setTimes,
+  clashDecisions,
+  groupCode: groupCode.trim() || undefined,
 });
 
 export const downloadJson = (payload: FestivalExport) => {

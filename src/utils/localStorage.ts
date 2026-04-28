@@ -1,10 +1,12 @@
-import type { FestivalExport, Intent, IntentMap } from "../types";
+import type { ClashDecisionMap, FestivalExport, Intent, IntentMap } from "../types";
 
 const storageKeys = {
   intents: "download-clash-finder:intents",
   profileName: "download-clash-finder:profile-name",
   imports: "download-clash-finder:imports",
   freeTimeWindow: "download-clash-finder:free-time-window",
+  clashDecisions: "download-clash-finder:clash-decisions",
+  groupCode: "download-clash-finder:group-code",
 };
 
 const parseJson = <T>(value: string | null, fallback: T): T => {
@@ -38,6 +40,20 @@ export const loadImports = (): FestivalExport[] =>
 
 export const saveImports = (value: FestivalExport[]) => {
   window.localStorage.setItem(storageKeys.imports, JSON.stringify(value));
+};
+
+export const loadClashDecisions = (): ClashDecisionMap =>
+  parseJson<ClashDecisionMap>(window.localStorage.getItem(storageKeys.clashDecisions), {});
+
+export const saveClashDecisions = (value: ClashDecisionMap) => {
+  window.localStorage.setItem(storageKeys.clashDecisions, JSON.stringify(value));
+};
+
+export const loadGroupCode = () =>
+  window.localStorage.getItem(storageKeys.groupCode) ?? "";
+
+export const saveGroupCode = (value: string) => {
+  window.localStorage.setItem(storageKeys.groupCode, value.trim());
 };
 
 export interface FreeTimeWindow {

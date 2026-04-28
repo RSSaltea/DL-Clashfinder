@@ -1,5 +1,5 @@
-import { AlertTriangle, CalendarDays, ExternalLink, Timer, UsersRound } from "lucide-react";
-import { useEffect, useState } from "react";
+import { AlertTriangle, CalendarDays, ExternalLink, Map, Route as RouteIcon, Timer, UsersRound } from "lucide-react";
+import { useEffect } from "react";
 import { HashRouter, NavLink, Route, Routes, useLocation } from "react-router-dom";
 import { festival } from "./data/lineup";
 import { useFestivalState } from "./hooks/useFestivalState";
@@ -7,8 +7,9 @@ import { ArtistDetail } from "./pages/ArtistDetail";
 import { Clashes } from "./pages/Clashes";
 import { Compare } from "./pages/Compare";
 import { FreeTime } from "./pages/FreeTime";
+import { GroupItinerary } from "./pages/GroupItinerary";
 import { Home } from "./pages/Home";
-import { completeSpotifyLoginIfNeeded } from "./utils/spotify";
+import { Itinerary } from "./pages/Itinerary";
 
 const ScrollToTop = () => {
   const location = useLocation();
@@ -24,20 +25,6 @@ const downloadLogoUrl = `${import.meta.env.BASE_URL}download-logo.png`;
 
 const AppRoutes = () => {
   const festivalState = useFestivalState();
-  const [spotifyMessage, setSpotifyMessage] = useState("");
-
-  useEffect(() => {
-    completeSpotifyLoginIfNeeded()
-      .then((completed) => {
-        if (completed) {
-          setSpotifyMessage("Spotify connected.");
-          window.dispatchEvent(new Event("spotify-connection-changed"));
-        }
-      })
-      .catch((error) => {
-        setSpotifyMessage(error instanceof Error ? error.message : "Spotify connection failed.");
-      });
-  }, []);
 
   return (
     <>
@@ -59,6 +46,10 @@ const AppRoutes = () => {
             <Timer size={18} />
             <span>Free Time</span>
           </NavLink>
+          <NavLink to="/itinerary">
+            <Map size={18} />
+            <span>Itinerary</span>
+          </NavLink>
           <NavLink to="/clashes">
             <AlertTriangle size={18} />
             <span>Clashes</span>
@@ -67,10 +58,12 @@ const AppRoutes = () => {
             <UsersRound size={18} />
             <span>Compare</span>
           </NavLink>
+          <NavLink to="/group-itinerary">
+            <RouteIcon size={18} />
+            <span>Group Itinerary</span>
+          </NavLink>
         </nav>
       </header>
-
-      {spotifyMessage && <div className="toast-message">{spotifyMessage}</div>}
 
       <Routes>
         <Route
@@ -99,13 +92,31 @@ const AppRoutes = () => {
             <FreeTime
               intents={festivalState.intents}
               setTimes={festivalState.setTimes}
+              clashDecisions={festivalState.clashDecisions}
               onIntentChange={festivalState.setArtistIntent}
             />
           }
         />
         <Route
+          path="/itinerary"
+          element={
+            <Itinerary
+              intents={festivalState.intents}
+              setTimes={festivalState.setTimes}
+              clashDecisions={festivalState.clashDecisions}
+            />
+          }
+        />
+        <Route
           path="/clashes"
-          element={<Clashes intents={festivalState.intents} setTimes={festivalState.setTimes} />}
+          element={
+            <Clashes
+              intents={festivalState.intents}
+              setTimes={festivalState.setTimes}
+              clashDecisions={festivalState.clashDecisions}
+              onClashDecisionChange={festivalState.setClashDecision}
+            />
+          }
         />
         <Route
           path="/compare"
@@ -118,6 +129,23 @@ const AppRoutes = () => {
               imports={festivalState.imports}
               onAddImports={festivalState.addImports}
               onRemoveImport={festivalState.removeImport}
+              clashDecisions={festivalState.clashDecisions}
+              onClashDecisionChange={festivalState.setClashDecision}
+              groupCode={festivalState.groupCode}
+              setGroupCode={festivalState.setGroupCode}
+            />
+          }
+        />
+        <Route
+          path="/group-itinerary"
+          element={
+            <GroupItinerary
+              intents={festivalState.intents}
+              profileName={festivalState.profileName}
+              setTimes={festivalState.setTimes}
+              imports={festivalState.imports}
+              clashDecisions={festivalState.clashDecisions}
+              groupCode={festivalState.groupCode}
             />
           }
         />

@@ -100,6 +100,8 @@ p {
 .app-nav {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 0.45rem;
 }
 
@@ -624,6 +626,28 @@ p {
   color: #ffd79a;
 }
 
+.clash-choice-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.choice-button {
+  min-height: 2.2rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  cursor: pointer;
+  padding: 0.45rem 0.65rem;
+}
+
+.choice-button.is-active {
+  border-color: rgba(117, 196, 111, 0.75);
+  background: rgba(117, 196, 111, 0.16);
+  color: #d8ffd4;
+}
+
 .versus-row {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -709,6 +733,15 @@ p {
   background: transparent;
   color: var(--muted);
   cursor: pointer;
+}
+
+.info-strip {
+  margin-bottom: 1rem;
+  border: 1px solid rgba(40, 190, 179, 0.28);
+  border-radius: 8px;
+  background: rgba(40, 190, 179, 0.08);
+  color: var(--muted);
+  padding: 0.75rem 0.9rem;
 }
 
 .error-banner,
@@ -842,7 +875,7 @@ p {
 
 .spotify-track {
   width: 100%;
-  height: 152px;
+  height: 352px;
   border: 0;
   border-radius: 12px;
 }
@@ -920,6 +953,82 @@ p {
   flex: 0 0 auto;
 }
 
+.free-time-option {
+  align-items: center;
+}
+
+.free-time-option > div:first-child {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.free-time-option .intent-buttons {
+  flex: 0 0 auto;
+  min-width: min(18rem, 100%);
+}
+
+.itinerary-list {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.itinerary-item {
+  display: grid;
+  grid-template-columns: minmax(7.5rem, 0.22fr) minmax(0, 1fr);
+  gap: 0.9rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  background: rgba(20, 25, 29, 0.86);
+  padding: 0.85rem;
+}
+
+.itinerary-item--set {
+  border-left-width: 5px;
+}
+
+.itinerary-item--gap {
+  border-color: rgba(40, 190, 179, 0.2);
+  background: rgba(40, 190, 179, 0.07);
+}
+
+.itinerary-time {
+  color: var(--amber);
+  font-weight: 800;
+}
+
+.itinerary-item h3 {
+  margin-bottom: 0.2rem;
+}
+
+.itinerary-item p,
+.gap-mini-grid span,
+.gap-mini-grid em {
+  color: var(--muted);
+}
+
+.gap-mini-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin: 0.45rem 0;
+}
+
+.gap-mini-grid p {
+  display: grid;
+  gap: 0.12rem;
+  border-left: 3px solid var(--line-strong);
+  padding-left: 0.55rem;
+}
+
+.gap-mini-grid strong {
+  color: var(--text);
+}
+
+.gap-mini-grid em {
+  font-style: normal;
+}
+
 .app-footer {
   display: flex;
   align-items: center;
@@ -983,7 +1092,9 @@ p {
   .stage-grid,
   .comparison-grid,
   .detail-grid,
-  .versus-row {
+  .versus-row,
+  .gap-mini-grid,
+  .itinerary-item {
     grid-template-columns: 1fr;
   }
 
@@ -1000,6 +1111,10 @@ p {
     align-items: start;
     flex-direction: column;
     gap: 0.25rem;
+  }
+
+  .free-time-option .intent-buttons {
+    width: 100%;
   }
 
   .compact-list span {

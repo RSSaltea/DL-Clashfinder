@@ -1,4 +1,4 @@
-import type { FestivalExport, IntentMap, SetTimeMap } from "../types";
+import type { ClashDecisionMap, FestivalExport, IntentMap, SetTimeMap } from "../types";
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
@@ -32,6 +32,16 @@ const parseSetTimes = (value: unknown): SetTimeMap => {
   }, {});
 };
 
+const parseClashDecisions = (value: unknown): ClashDecisionMap => {
+  if (!isRecord(value)) {
+    return {};
+  }
+
+  return Object.fromEntries(
+    Object.entries(value).filter(([, artistId]) => typeof artistId === "string"),
+  ) as ClashDecisionMap;
+};
+
 export const parseImportedPlan = async (file: File): Promise<FestivalExport> => {
   const text = await file.text();
   const parsed = JSON.parse(text) as unknown;
@@ -56,5 +66,7 @@ export const parseImportedPlan = async (file: File): Promise<FestivalExport> => 
       : file.name.replace(/\.json$/i, ""),
     intents: parseIntentMap(parsed.intents),
     setTimes: parseSetTimes(parsed.setTimes),
+    clashDecisions: parseClashDecisions(parsed.clashDecisions),
+    groupCode: typeof parsed.groupCode === "string" ? parsed.groupCode.trim() : undefined,
   };
 };

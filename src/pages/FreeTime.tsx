@@ -1,31 +1,21 @@
 import { Timer } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArtistCard } from "../components/ArtistCard";
+import { IntentButtons } from "../components/IntentButtons";
 import { festivalDays, lineup } from "../data/lineup";
-import type { Artist, Intent, IntentMap, SetTimeMap } from "../types";
+import type { ClashDecisionMap, Intent, IntentMap, SetTimeMap } from "../types";
 import { loadFreeTimeWindow, saveFreeTimeWindow } from "../utils/localStorage";
-import {
-  computeFreeGaps,
-  formatDuration,
-  getEffectiveTime,
-  minutesToTime,
-  timeToMinutes,
-  windowEndToMins,
-} from "../utils/time";
+import { buildScheduleDay, getStageLabel } from "../utils/schedule";
+import { formatDuration, minutesToTime, timeToMinutes, windowEndToMins } from "../utils/time";
 
 interface FreeTimeProps {
   intents: IntentMap;
   setTimes: SetTimeMap;
+  clashDecisions: ClashDecisionMap;
   onIntentChange: (artistId: string, intent: Intent) => void;
 }
 
-interface GapBookend {
-  artist: Artist;
-  time: string;
-}
-
-export const FreeTime = ({ intents, setTimes, onIntentChange }: FreeTimeProps) => {
+export const FreeTime = ({ intents, setTimes, clashDecisions, onIntentChange }: FreeTimeProps) => {
   const [window, setWindow] = useState(() => loadFreeTimeWindow());
 
   useEffect(() => {
@@ -35,50 +25,27 @@ export const FreeTime = ({ intents, setTimes, onIntentChange }: FreeTimeProps) =
   const windowStartMins = timeToMinutes(window.start) ?? 600;
   const windowEndMins = windowEndToMins(window.end);
 
-  const dayData = useMemo(() => {
-    return festivalDays.map((day) => {
-      const selectedOnDay = lineup.filter(
-        (artist) => artist.day === day.id && Boolean(intents[artist.id]),
-      );
+  const dayData = useMemo(
+    () =>
+      festivalDays.map((day) => {
+        const pickedOnDay = lineup.filter((artist) => artist.day === day.id && Boolean(intents[artist.id]));
 
-      const gaps = computeFreeGaps(selectedOnDay, setTimes, windowStartMins, windowEndMins);
+        return {
+          day,
+          schedule: buildScheduleDay(
+            day.id,
+            pickedOnDay,
+            setTimes,
+            clashDecisions,
+            windowStartMins,
+            windowEndMins,
+          ),
+        };
+      }),
+    [clashDecisions, intents, setTimes, windowEndMins, windowStartMins],
+  );
 
-      const gapsWithArtists = gaps.map((gap) => {
-        const playing = lineup.filter((artist) => {
-          if (artist.day !== day.id) return false;
-          if (intents[artist.id]) return false;
-          const t = getEffectiveTime(artist, setTimes);
-          const start = timeToMinutes(t.start);
-          const end = timeToMinutes(t.end);
-          if (start === undefined || end === undefined) return false;
-          return start < gap.end && end > gap.start;
-        });
-
-        const comingFrom: GapBookend | null = (() => {
-          const artist = selectedOnDay.find((a) => {
-            const t = getEffectiveTime(a, setTimes);
-            return timeToMinutes(t.end) === gap.start;
-          }) ?? null;
-          return artist ? { artist, time: minutesToTime(gap.start) } : null;
-        })();
-
-        const goingTo: GapBookend | null = (() => {
-          if (gap.end === windowEndMins) return null;
-          const artist = selectedOnDay.find((a) => {
-            const t = getEffectiveTime(a, setTimes);
-            return timeToMinutes(t.start) === gap.end;
-          }) ?? null;
-          return artist ? { artist, time: minutesToTime(gap.end) } : null;
-        })();
-
-        return { ...gap, playing, comingFrom, goingTo };
-      });
-
-      return { day, gaps: gapsWithArtists, selectedCount: selectedOnDay.length };
-    });
-  }, [intents, setTimes, windowStartMins, windowEndMins]);
-
-  const totalGaps = dayData.reduce((sum, d) => sum + d.gaps.length, 0);
+  const totalGaps = dayData.reduce((sum, item) => sum + item.schedule.gaps.length, 0);
 
   return (
     <main className="page-shell">
@@ -93,7 +60,7 @@ export const FreeTime = ({ intents, setTimes, onIntentChange }: FreeTimeProps) =
             <input
               type="time"
               value={window.start}
-              onChange={(e) => setWindow((w) => ({ ...w, start: e.target.value }))}
+              onChange={(event) => setWindow((current) => ({ ...current, start: event.target.value }))}
             />
           </label>
           <label>
@@ -101,13 +68,13 @@ export const FreeTime = ({ intents, setTimes, onIntentChange }: FreeTimeProps) =
             <input
               type="time"
               value={window.end}
-              onChange={(e) => setWindow((w) => ({ ...w, end: e.target.value }))}
+              onChange={(event) => setWindow((current) => ({ ...current, end: event.target.value }))}
             />
           </label>
         </div>
       </section>
 
-      {totalGaps === 0 && dayData.every((d) => d.selectedCount === 0) && (
+      {totalGaps === 0 && dayData.every(({ schedule }) => schedule.pickedCount === 0) && (
         <div className="empty-state" style={{ marginTop: "1rem" }}>
           <Timer size={24} />
           <h2>Nothing selected yet</h2>
@@ -115,45 +82,49 @@ export const FreeTime = ({ intents, setTimes, onIntentChange }: FreeTimeProps) =
         </div>
       )}
 
-      {dayData.map(({ day, gaps, selectedCount }) => (
+      {dayData.map(({ day, schedule }) => (
         <section className="day-group" key={day.id}>
           <div className="day-heading">
             <h2>{day.label}</h2>
             <span>
-              {selectedCount === 0
+              {schedule.pickedCount === 0
                 ? "No picks"
-                : gaps.length === 0
+                : schedule.gaps.length === 0
                   ? "No gaps"
-                  : `${gaps.length} gap${gaps.length !== 1 ? "s" : ""}`}
+                  : `${schedule.gaps.length} gap${schedule.gaps.length !== 1 ? "s" : ""}`}
             </span>
           </div>
 
-          {selectedCount === 0 ? (
+          {schedule.excludedCount > 0 && (
+            <p className="muted">{schedule.excludedCount} clash choice removed from this free-time plan.</p>
+          )}
+
+          {schedule.pickedCount === 0 ? (
             <div className="empty-state tight">
               <p className="muted">No artists selected for this day.</p>
             </div>
-          ) : gaps.length === 0 ? (
+          ) : schedule.gaps.length === 0 ? (
             <div className="empty-state tight">
-              <p className="muted">You're busy the whole window — no free time on this day.</p>
+              <p className="muted">You're busy the whole window, no free time on this day.</p>
             </div>
           ) : (
             <div className="gap-list">
-              {gaps.map((gap) => {
+              {schedule.gaps.map((gap) => {
                 const endLabel = gap.end === 1440 ? "00:00" : minutesToTime(gap.end);
                 const duration = formatDuration(gap.end - gap.start);
 
                 return (
-                  <div className="gap-card" key={`${gap.start}-${gap.end}`}>
+                  <div className="gap-card" key={`${day.id}-${gap.start}-${gap.end}`}>
                     {gap.comingFrom && (
                       <div className="gap-bookend gap-bookend--from">
                         <span>Finishing</span>
                         <strong>{gap.comingFrom.artist.name}</strong>
-                        <span>ends {gap.comingFrom.time}</span>
+                        <span>{getStageLabel(gap.comingFrom.artist)} - ends {minutesToTime(gap.start)}</span>
                       </div>
                     )}
 
                     <div className="gap-card__header">
-                      <strong>{minutesToTime(gap.start)} – {endLabel}</strong>
+                      <strong>{minutesToTime(gap.start)} - {endLabel}</strong>
                       <span>{duration} free</span>
                     </div>
 
@@ -162,17 +133,18 @@ export const FreeTime = ({ intents, setTimes, onIntentChange }: FreeTimeProps) =
                         Nobody else is playing during this gap.
                       </p>
                     ) : (
-                      <div className="stage-grid">
-                        {gap.playing.map((artist) => (
-                          <ArtistCard
-                            key={artist.id}
-                            artist={artist}
-                            clashes={[]}
-                            intent={intents[artist.id]}
-                            tightGaps={[]}
-                            time={getEffectiveTime(artist, setTimes)}
-                            onIntentChange={onIntentChange}
-                          />
+                      <div className="compact-list">
+                        {gap.playing.map(({ artist, start, end }) => (
+                          <div className="free-time-option" key={artist.id}>
+                            <div>
+                              <strong>{artist.name}</strong>
+                              <span>{getStageLabel(artist)} - {minutesToTime(start)} to {minutesToTime(end)}</span>
+                            </div>
+                            <IntentButtons
+                              intent={intents[artist.id]}
+                              onChange={(nextIntent) => onIntentChange(artist.id, nextIntent)}
+                            />
+                          </div>
                         ))}
                       </div>
                     )}
@@ -181,7 +153,7 @@ export const FreeTime = ({ intents, setTimes, onIntentChange }: FreeTimeProps) =
                       <div className="gap-bookend gap-bookend--to">
                         <span>Heading to</span>
                         <strong>{gap.goingTo.artist.name}</strong>
-                        <span>starts {gap.goingTo.time}</span>
+                        <span>{getStageLabel(gap.goingTo.artist)} - starts {minutesToTime(gap.end)}</span>
                       </div>
                     )}
                   </div>

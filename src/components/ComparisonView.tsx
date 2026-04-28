@@ -1,11 +1,19 @@
 import { Download, FileJson, Trash2, Upload } from "lucide-react";
 import { ChangeEvent, useMemo, useState } from "react";
-import { artistById, festivalDays, getStage, lineup } from "../data/lineup";
-import type { Artist, FestivalExport, IntentMap, SetTimeMap } from "../types";
+import { festivalDays } from "../data/lineup";
+import type { Artist, ClashDecisionMap, FestivalExport, IntentMap, ProfilePlan, SetTimeMap } from "../types";
 import { createExportPayload, downloadJson } from "../utils/export";
 import { parseImportedPlan } from "../utils/import";
 import { loadFreeTimeWindow } from "../utils/localStorage";
-import { computeFreeGaps, formatDuration, getEffectiveTime, getOverlapRange, minutesToTime, timeToMinutes, windowEndToMins } from "../utils/time";
+import {
+  buildScheduleDay,
+  getGroupArtists,
+  getStageLabel,
+  getSupportMap,
+  getSupportText,
+} from "../utils/schedule";
+import { getAllClashes } from "../utils/clash";
+import { formatDuration, getEffectiveTime, minutesToTime, timeToMinutes, windowEndToMins } from "../utils/time";
 
 interface ComparisonViewProps {
   intents: IntentMap;
@@ -15,16 +23,17 @@ interface ComparisonViewProps {
   imports: FestivalExport[];
   onAddImports: (newImports: FestivalExport[]) => void;
   onRemoveImport: (index: number) => void;
+  clashDecisions: ClashDecisionMap;
+  onClashDecisionChange: (clashId: string, artistId: string | undefined) => void;
+  groupCode: string;
+  setGroupCode: (value: string) => void;
 }
 
-interface ProfilePlan {
-  id: string;
-  name: string;
-  intents: IntentMap;
-  setTimes: SetTimeMap;
+interface GroupRow {
+  artist: Artist;
+  supporters: string[];
+  definiteSupporters: string[];
 }
-
-const selectedIdsFor = (plan: ProfilePlan) => new Set(Object.keys(plan.intents));
 
 const sortArtists = (artists: Artist[]) =>
   [...artists].sort((a, b) => {
@@ -35,6 +44,8 @@ const sortArtists = (artists: Artist[]) =>
     return a.order - b.order;
   });
 
+const choiceButtonClass = (selected: boolean) => `choice-button ${selected ? "is-active" : ""}`;
+
 export const ComparisonView = ({
   intents,
   profileName,
@@ -43,6 +54,10 @@ export const ComparisonView = ({
   imports,
   onAddImports,
   onRemoveImport,
+  clashDecisions,
+  onClashDecisionChange,
+  groupCode,
+  setGroupCode,
 }: ComparisonViewProps) => {
   const [error, setError] = useState("");
 
@@ -50,42 +65,44 @@ export const ComparisonView = ({
   const windowStartMins = timeToMinutes(freeTimeWindow.start) ?? 600;
   const windowEndMins = windowEndToMins(freeTimeWindow.end);
 
-  const profiles = useMemo<ProfilePlan[]>(() => [
-    { id: "local", name: profileName || "Me", intents, setTimes },
-    ...imports.map((item, index) => ({
-      id: `${item.profileName}-${index}`,
-      name: item.profileName,
-      intents: item.intents,
-      setTimes: item.setTimes,
-    })),
-  ], [imports, intents, profileName, setTimes]);
+  const profiles = useMemo<ProfilePlan[]>(
+    () => [
+      { id: "local", name: profileName || "Me", intents, setTimes, clashDecisions, groupCode },
+      ...imports.map((item, index) => ({
+        id: `${item.profileName}-${index}`,
+        name: item.profileName,
+        intents: item.intents,
+        setTimes: item.setTimes,
+        clashDecisions: item.clashDecisions,
+        groupCode: item.groupCode,
+      })),
+    ],
+    [clashDecisions, groupCode, imports, intents, profileName, setTimes],
+  );
 
   const combinedSetTimes = useMemo(
     () => profiles.reduce<SetTimeMap>((acc, profile) => ({ ...acc, ...profile.setTimes }), {}),
     [profiles],
   );
 
-  const groupRows = useMemo(() => {
-    const artistIds = new Set(profiles.flatMap((profile) => Object.keys(profile.intents)));
+  const supportMap = useMemo(() => getSupportMap(profiles), [profiles]);
 
-    return Array.from(artistIds)
-      .map((artistId) => {
-        const artist = artistById.get(artistId);
+  const groupRows = useMemo<GroupRow[]>(() => {
+    return Array.from(supportMap.entries())
+      .map(([artistId, support]) => {
+        const artist = getGroupArtists(profiles).find((candidate) => candidate.id === artistId);
 
         if (!artist) {
           return undefined;
         }
 
-        const supporters = profiles.filter((profile) => profile.intents[artistId]);
-        const definiteSupporters = supporters.filter((profile) => profile.intents[artistId] === "definite");
-
         return {
           artist,
-          supporters,
-          definiteSupporters,
+          supporters: support.supporters,
+          definiteSupporters: support.definiteSupporters,
         };
       })
-      .filter((row): row is NonNullable<typeof row> => Boolean(row))
+      .filter((row): row is GroupRow => Boolean(row))
       .sort((a, b) => {
         if (b.definiteSupporters.length !== a.definiteSupporters.length) {
           return b.definiteSupporters.length - a.definiteSupporters.length;
@@ -97,105 +114,42 @@ export const ComparisonView = ({
 
         return a.artist.order - b.artist.order;
       });
-  }, [profiles]);
+  }, [profiles, supportMap]);
 
   const mutualWithMe = useMemo(() => {
-    const localSelected = selectedIdsFor(profiles[0]);
+    const localSelected = new Set(Object.keys(profiles[0].intents));
     const friendSelected = new Set(profiles.slice(1).flatMap((profile) => Object.keys(profile.intents)));
 
     return sortArtists(
       Array.from(localSelected)
         .filter((artistId) => friendSelected.has(artistId))
-        .map((artistId) => artistById.get(artistId))
+        .map((artistId) => groupRows.find((row) => row.artist.id === artistId)?.artist)
         .filter((artist): artist is Artist => Boolean(artist)),
     );
-  }, [profiles]);
+  }, [groupRows, profiles]);
 
   const groupClashes = useMemo(() => {
-    const rows = groupRows.map((row) => row.artist);
-    const clashes: Array<{
-      id: string;
-      first: Artist;
-      second: Artist;
-      start: string;
-      end: string;
-      firstSupporters: string;
-      secondSupporters: string;
-    }> = [];
+    const artists = groupRows.map((row) => row.artist);
 
-    rows.forEach((first, index) => {
-      rows.slice(index + 1).forEach((second) => {
-        if (first.day !== second.day) {
-          return;
-        }
-
-        const overlap = getOverlapRange(
-          getEffectiveTime(first, combinedSetTimes),
-          getEffectiveTime(second, combinedSetTimes),
-        );
-
-        if (!overlap) {
-          return;
-        }
-
-        const firstRow = groupRows.find((row) => row.artist.id === first.id);
-        const secondRow = groupRows.find((row) => row.artist.id === second.id);
-
-        clashes.push({
-          id: `${first.id}-${second.id}`,
-          first,
-          second,
-          start: overlap.start,
-          end: overlap.end,
-          firstSupporters: firstRow?.supporters.map((profile) => profile.name).join(", ") ?? "",
-          secondSupporters: secondRow?.supporters.map((profile) => profile.name).join(", ") ?? "",
-        });
-      });
-    });
-
-    return clashes.slice(0, 40);
+    return getAllClashes(artists, combinedSetTimes).slice(0, 60);
   }, [combinedSetTimes, groupRows]);
 
-  const groupFreeTimeData = useMemo(() => {
-    return festivalDays.map((day) => {
-      const allGroupArtists = profiles.flatMap((profile) =>
-        lineup.filter((artist) => artist.day === day.id && Boolean(profile.intents[artist.id])),
-      );
-      const uniqueGroupArtists = Array.from(new Map(allGroupArtists.map((a) => [a.id, a])).values());
-
-      const gaps = computeFreeGaps(uniqueGroupArtists, combinedSetTimes, windowStartMins, windowEndMins);
-
-      const allGroupIds = new Set(uniqueGroupArtists.map((a) => a.id));
-
-      const gapsWithPlaying = gaps.map((gap) => {
-        const playing = lineup.filter((artist) => {
-          if (artist.day !== day.id) return false;
-          if (allGroupIds.has(artist.id)) return false;
-          const t = getEffectiveTime(artist, combinedSetTimes);
-          const start = timeToMinutes(t.start);
-          const end = timeToMinutes(t.end);
-          if (start === undefined || end === undefined) return false;
-          return start < gap.end && end > gap.start;
-        });
-
-        const comingFrom = uniqueGroupArtists.find((a) => {
-          const t = getEffectiveTime(a, combinedSetTimes);
-          return timeToMinutes(t.end) === gap.start;
-        }) ?? null;
-
-        const goingTo = gap.end === windowEndMins
-          ? null
-          : uniqueGroupArtists.find((a) => {
-              const t = getEffectiveTime(a, combinedSetTimes);
-              return timeToMinutes(t.start) === gap.end;
-            }) ?? null;
-
-        return { ...gap, playing, comingFrom, goingTo };
-      });
-
-      return { day, gaps: gapsWithPlaying };
-    });
-  }, [profiles, combinedSetTimes, windowStartMins, windowEndMins]);
+  const groupFreeTimeData = useMemo(
+    () =>
+      festivalDays.map((day) => ({
+        day,
+        schedule: buildScheduleDay(
+          day.id,
+          getGroupArtists(profiles, day.id),
+          combinedSetTimes,
+          clashDecisions,
+          windowStartMins,
+          windowEndMins,
+          supportMap,
+        ),
+      })),
+    [clashDecisions, combinedSetTimes, profiles, supportMap, windowEndMins, windowStartMins],
+  );
 
   const handleImport = async (event: ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files ?? []);
@@ -212,7 +166,7 @@ export const ComparisonView = ({
   };
 
   const handleExport = () => {
-    downloadJson(createExportPayload(profileName, intents, setTimes));
+    downloadJson(createExportPayload(profileName, intents, setTimes, clashDecisions, groupCode));
   };
 
   const windowEndLabel = freeTimeWindow.end === "00:00" ? "Midnight" : freeTimeWindow.end;
@@ -235,12 +189,24 @@ export const ComparisonView = ({
           <span>Your name</span>
           <input value={profileName} onChange={(event) => setProfileName(event.target.value)} />
         </label>
+        <label className="text-field">
+          <span>Group code</span>
+          <input
+            value={groupCode}
+            placeholder="e.g. download-crew"
+            onChange={(event) => setGroupCode(event.target.value)}
+          />
+        </label>
         <label className="file-drop">
           <Upload size={20} />
           <span>Import friend JSON</span>
           <input type="file" accept="application/json,.json" multiple onChange={handleImport} />
         </label>
       </section>
+
+      <div className="info-strip">
+        Group code is saved into exports so you can keep plans labelled together. Automatic shared syncing needs a small backend, because GitHub Pages cannot store everyone&apos;s plans by itself.
+      </div>
 
       {error && <div className="error-banner">{error}</div>}
 
@@ -249,7 +215,7 @@ export const ComparisonView = ({
           {imports.map((item, index) => (
             <div className="import-pill" key={`${item.profileName}-${item.exportedAt}`}>
               <FileJson size={16} />
-              <span>{item.profileName}</span>
+              <span>{item.profileName}{item.groupCode ? ` - ${item.groupCode}` : ""}</span>
               <button
                 type="button"
                 title={`Remove ${item.profileName}`}
@@ -269,12 +235,16 @@ export const ComparisonView = ({
             <p className="muted">Import a friend plan to see shared artists.</p>
           ) : (
             <div className="compact-list">
-              {mutualWithMe.map((artist) => (
-                <div key={artist.id}>
-                  <strong>{artist.name}</strong>
-                  <span>{getStage(artist.stage)?.shortName}</span>
-                </div>
-              ))}
+              {mutualWithMe.map((artist) => {
+                const support = supportMap.get(artist.id);
+
+                return (
+                  <div key={artist.id}>
+                    <strong>{artist.name}</strong>
+                    <span>{getStageLabel(artist)} - {getSupportText(support)}</span>
+                  </div>
+                );
+              })}
             </div>
           )}
         </article>
@@ -288,7 +258,9 @@ export const ComparisonView = ({
               {groupRows.slice(0, 16).map((row) => (
                 <div key={row.artist.id}>
                   <strong>{row.artist.name}</strong>
-                  <span>{row.supporters.length} picks · {row.definiteSupporters.length} definite</span>
+                  <span>
+                    {getStageLabel(row.artist)} - {row.supporters.length} picks, {row.definiteSupporters.length} definite - {row.supporters.join(", ")}
+                  </span>
                 </div>
               ))}
             </div>
@@ -304,7 +276,7 @@ export const ComparisonView = ({
         {groupClashes.length === 0 ? (
           <div className="empty-state">
             <h2>No shared clashes yet.</h2>
-            <p>Enter set times and import another plan to compare decisions.</p>
+            <p>Import another plan or pick overlapping artists to compare decisions.</p>
           </div>
         ) : (
           <div className="comparison-grid">
@@ -315,14 +287,39 @@ export const ComparisonView = ({
                   <span>{festivalDays.find((day) => day.id === clash.first.day)?.shortLabel}</span>
                 </div>
                 <div className="versus-row">
-                  <div>
-                    <h3>{clash.first.name}</h3>
-                    <p>{clash.firstSupporters}</p>
-                  </div>
-                  <div>
-                    <h3>{clash.second.name}</h3>
-                    <p>{clash.secondSupporters}</p>
-                  </div>
+                  {[clash.first, clash.second].map((artist) => {
+                    const support = supportMap.get(artist.id);
+                    const time = getEffectiveTime(artist, combinedSetTimes);
+
+                    return (
+                      <div key={artist.id}>
+                        <h3>{artist.name}</h3>
+                        <p>{getStageLabel(artist)} - {time.start} to {time.end}</p>
+                        <p>{getSupportText(support)}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="clash-choice-row" aria-label={`Choose between ${clash.first.name} and ${clash.second.name}`}>
+                  {[clash.first, clash.second].map((artist) => {
+                    const selected = clashDecisions[clash.id] === artist.id;
+
+                    return (
+                      <button
+                        key={artist.id}
+                        type="button"
+                        className={choiceButtonClass(selected)}
+                        onClick={() => onClashDecisionChange(clash.id, selected ? undefined : artist.id)}
+                      >
+                        Group pick {artist.name}
+                      </button>
+                    );
+                  })}
+                  {clashDecisions[clash.id] && (
+                    <button type="button" className="choice-button" onClick={() => onClashDecisionChange(clash.id, undefined)}>
+                      Clear
+                    </button>
+                  )}
                 </div>
               </article>
             ))}
@@ -333,67 +330,72 @@ export const ComparisonView = ({
       <section className="day-group">
         <div className="day-heading">
           <h2>Group Free Time</h2>
-          <span>{freeTimeWindow.start} – {windowEndLabel}</span>
+          <span>{freeTimeWindow.start} - {windowEndLabel}</span>
         </div>
         <p className="muted" style={{ fontSize: "0.9rem" }}>
-          Periods where nobody in the group has anyone playing. Adjust the window on the Free Time page.
+          Periods where the group itinerary has no chosen set. Adjust the window on the Free Time page.
         </p>
 
-        {groupFreeTimeData.every((d) => d.gaps.length === 0) && groupRows.length === 0 ? (
+        {groupRows.length === 0 ? (
           <div className="empty-state">
             <p>Import friend plans and mark artists to see group free time.</p>
           </div>
         ) : (
-          groupFreeTimeData.map(({ day, gaps }) => (
+          groupFreeTimeData.map(({ day, schedule }) => (
             <div className="day-group" key={day.id} style={{ marginTop: "0.5rem" }}>
               <div className="day-heading">
                 <h3 style={{ fontSize: "1.1rem" }}>{day.label}</h3>
-                <span>{gaps.length} gap{gaps.length !== 1 ? "s" : ""}</span>
+                <span>{schedule.gaps.length} gap{schedule.gaps.length !== 1 ? "s" : ""}</span>
               </div>
 
-              {gaps.length === 0 ? (
+              {schedule.excludedCount > 0 && (
+                <p className="muted">{schedule.excludedCount} clash choice removed from group free time.</p>
+              )}
+
+              {schedule.gaps.length === 0 ? (
                 <div className="empty-state tight">
                   <p className="muted">Someone in the group is always busy on this day.</p>
                 </div>
               ) : (
                 <div className="gap-list">
-                  {gaps.map((gap) => {
+                  {schedule.gaps.map((gap) => {
                     const endLabel = gap.end === 1440 ? "00:00" : minutesToTime(gap.end);
                     const duration = formatDuration(gap.end - gap.start);
 
                     return (
-                      <div className="gap-card" key={`${gap.start}-${gap.end}`}>
+                      <div className="gap-card" key={`${day.id}-${gap.start}-${gap.end}`}>
                         {gap.comingFrom && (
                           <div className="gap-bookend gap-bookend--from">
                             <span>Finishing</span>
-                            <strong>{gap.comingFrom.name}</strong>
-                            <span>ends {minutesToTime(gap.start)}</span>
+                            <strong>{gap.comingFrom.artist.name}</strong>
+                            <span>
+                              {getStageLabel(gap.comingFrom.artist)} - {getSupportText(gap.comingFrom.supporters)}
+                            </span>
                           </div>
                         )}
                         <div className="gap-card__header">
-                          <strong>{minutesToTime(gap.start)} – {endLabel}</strong>
+                          <strong>{minutesToTime(gap.start)} - {endLabel}</strong>
                           <span>{duration} free</span>
                         </div>
                         {gap.playing.length === 0 ? (
                           <p className="muted" style={{ fontSize: "0.9rem" }}>Nobody else playing during this gap.</p>
                         ) : (
                           <div className="compact-list">
-                            {gap.playing.map((artist) => {
-                              const t = getEffectiveTime(artist, combinedSetTimes);
-                              return (
-                                <div key={artist.id}>
-                                  <strong>{artist.name}</strong>
-                                  <span>{getStage(artist.stage)?.shortName} · {t.start}–{t.end}</span>
-                                </div>
-                              );
-                            })}
+                            {gap.playing.map(({ artist, start, end }) => (
+                              <div key={artist.id}>
+                                <strong>{artist.name}</strong>
+                                <span>{getStageLabel(artist)} - {minutesToTime(start)} to {minutesToTime(end)}</span>
+                              </div>
+                            ))}
                           </div>
                         )}
                         {gap.goingTo && (
                           <div className="gap-bookend gap-bookend--to">
                             <span>Heading to</span>
-                            <strong>{gap.goingTo.name}</strong>
-                            <span>starts {minutesToTime(gap.end)}</span>
+                            <strong>{gap.goingTo.artist.name}</strong>
+                            <span>
+                              {getStageLabel(gap.goingTo.artist)} - {getSupportText(gap.goingTo.supporters)}
+                            </span>
                           </div>
                         )}
                       </div>

@@ -1,14 +1,13 @@
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, Music2 } from "lucide-react";
 import type { Artist } from "../types";
-import { getSpotifyArtistEmbedUrl, getSpotifySearchUrl, getSpotifyTrackEmbedUrl } from "../utils/spotify";
+import { getSpotifySearchUrl, getSpotifyTrackEmbedUrl } from "../utils/spotify";
 
 interface SpotifyPanelProps {
   artist: Artist;
 }
 
 export const SpotifyPanel = ({ artist }: SpotifyPanelProps) => {
-  const hasArtist = Boolean(artist.spotifyArtistId);
-  const hasTracks = artist.spotifyTrackIds && artist.spotifyTrackIds.length > 0;
+  const trackIds = artist.spotifyTrackIds?.slice(0, 5) ?? [];
 
   return (
     <section className="spotify-panel">
@@ -23,31 +22,24 @@ export const SpotifyPanel = ({ artist }: SpotifyPanelProps) => {
         </a>
       </div>
 
-      {hasArtist && (
-        <iframe
-          title={`${artist.name} on Spotify`}
-          style={{ borderRadius: "12px" }}
-          src={getSpotifyArtistEmbedUrl(artist.spotifyArtistId!)}
-          width="100%"
-          height="352"
-          frameBorder="0"
-          allowFullScreen
-          allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-          loading="lazy"
-        />
-      )}
-
-      {hasTracks && (
+      {trackIds.length === 0 ? (
+        <div className="spotify-connect-card">
+          <Music2 size={24} />
+          <div>
+            <h3>Top songs not added yet</h3>
+            <p>Add Spotify track IDs to this artist in `src/data/lineup.ts` or use Open Search.</p>
+          </div>
+        </div>
+      ) : (
         <div className="track-embed-list">
-          {artist.spotifyTrackIds!.map((trackId) => (
+          {trackIds.map((trackId) => (
             <iframe
               key={trackId}
               className="spotify-track"
-              title={`Track by ${artist.name}`}
-              style={{ borderRadius: "12px" }}
+              title={`${artist.name} Spotify track`}
               src={getSpotifyTrackEmbedUrl(trackId)}
               width="100%"
-              height="152"
+              height="352"
               frameBorder="0"
               allowFullScreen
               allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"

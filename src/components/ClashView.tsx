@@ -1,7 +1,7 @@
 import { AlertTriangle, Clock, ListFilter } from "lucide-react";
 import { useMemo, useState } from "react";
 import { festivalDays, getDay, getStage, lineup } from "../data/lineup";
-import type { IntentMap, SetTimeMap } from "../types";
+import type { Artist, ClashDecisionMap, IntentMap, SetTimeMap } from "../types";
 import { getAllClashes } from "../utils/clash";
 import { formatTimeRange, getEffectiveTime } from "../utils/time";
 
@@ -10,9 +10,50 @@ type ClashScope = "mine" | "definite";
 interface ClashViewProps {
   intents: IntentMap;
   setTimes: SetTimeMap;
+  clashDecisions: ClashDecisionMap;
+  onClashDecisionChange: (clashId: string, artistId: string | undefined) => void;
 }
 
-export const ClashView = ({ intents, setTimes }: ClashViewProps) => {
+const ClashChoiceButtons = ({
+  clashId,
+  artists,
+  clashDecisions,
+  onClashDecisionChange,
+}: {
+  clashId: string;
+  artists: Artist[];
+  clashDecisions: ClashDecisionMap;
+  onClashDecisionChange: (clashId: string, artistId: string | undefined) => void;
+}) => (
+  <div className="clash-choice-row" aria-label="Choose clash winner">
+    {artists.map((artist) => {
+      const selected = clashDecisions[clashId] === artist.id;
+
+      return (
+        <button
+          key={artist.id}
+          type="button"
+          className={`choice-button ${selected ? "is-active" : ""}`}
+          onClick={() => onClashDecisionChange(clashId, selected ? undefined : artist.id)}
+        >
+          See {artist.name}
+        </button>
+      );
+    })}
+    {clashDecisions[clashId] && (
+      <button type="button" className="choice-button" onClick={() => onClashDecisionChange(clashId, undefined)}>
+        Clear
+      </button>
+    )}
+  </div>
+);
+
+export const ClashView = ({
+  intents,
+  setTimes,
+  clashDecisions,
+  onClashDecisionChange,
+}: ClashViewProps) => {
   const [scope, setScope] = useState<ClashScope>("mine");
 
   const scopedArtists = useMemo(() => {
@@ -46,7 +87,7 @@ export const ClashView = ({ intents, setTimes }: ClashViewProps) => {
       {clashes.length === 0 ? (
         <div className="empty-state">
           <h2>No clashes yet.</h2>
-          <p>Add start and end times to overlapping artists, then this page will light up.</p>
+          <p>Pick overlapping artists, then this page will light up.</p>
         </div>
       ) : (
         <section className="clash-list">
@@ -75,10 +116,16 @@ export const ClashView = ({ intents, setTimes }: ClashViewProps) => {
                         {[clash.first, clash.second].map((artist) => (
                           <div key={artist.id}>
                             <h3>{artist.name}</h3>
-                            <p>{getStage(artist.stage)?.shortName} · {formatTimeRange(getEffectiveTime(artist, setTimes))}</p>
+                            <p>{getStage(artist.stage)?.shortName} - {formatTimeRange(getEffectiveTime(artist, setTimes))}</p>
                           </div>
                         ))}
                       </div>
+                      <ClashChoiceButtons
+                        clashId={clash.id}
+                        artists={[clash.first, clash.second]}
+                        clashDecisions={clashDecisions}
+                        onClashDecisionChange={onClashDecisionChange}
+                      />
                       <p className="meta-line">
                         <Clock size={14} />
                         {getDay(clash.day)?.label}
