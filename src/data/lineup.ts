@@ -74,7 +74,7 @@ export const lineup: Artist[] = [
     { name: "Pendulum", start: "16:10", end: "17:00", spotifyTrackIds: ["4Y2glvLjQGOb4dXnwm1hQf", "5wqlRFdpJ1a4kMIBSWeCnN", "5ami95W9OOWQPwrBb5tud5", "6tC2iHfUlzB2W4ntXXL2BH", "0G7qyvqwjfMdHZn4RwiAdf"] },
     { name: "Hollywood Undead", start: "15:00", end: "15:40", spotifyTrackIds: ["5wBLDkxVvclanSitx5jq8e", "1czaCgWLWgqp0eRIZ0BcXh", "7vWaeCBcobKgzJgbOl23KU", "07BuyVse8pYAWd9DXD7B2D", "5toE2GI4iMIpelQtzKNT9Q"] },
     { name: "P.O.D.", start: "14:00", end: "14:30", spotifyTrackIds: ["0UrWr7Jnu1heq1o99ZwUd0", "5DooySfCD1xCJ49gQm9rx7", "1X4Ntw6Lbaa1ACgilCqMpr", "1Xf9XhxiCHnru2jEwGgD4D", "3zAIrDlrGJ5cwBHMR1YaLl"] },
-    { name: "Scene Queen", start: "13:00", end: "13:30" },
+    { name: "Scene Queen", start: "13:00", end: "13:30", spotifyTrackIds: ["7aVUykGDZCRyLRKCQrtrbx", "6xeMsEEUC7lhZc9xLty606", "32ljWqOxw3ckyuaUc882F6", "2jRciInArYaE7ON8RkUD8Q", "3DL4hiSqYyKVh12ltLVHHe"] },
   ], 100),
   ...addArtists("saturday", "apex", [
     { name: "Guns N' Roses", start: "19:35", end: "22:55", spotifyTrackIds: ["7snQQk1zcKl8gZ92AnueZW", "0G21yYKMZoHa30cYVi1iA8", "6eN1f9KNmiWEhpE2RhQqB5", "3YRCqOhFifThpSRFJ1VWFM", "4JiEyzf0Md7KEFFGWDDdCr"] },
