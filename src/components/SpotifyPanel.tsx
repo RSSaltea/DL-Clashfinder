@@ -92,8 +92,8 @@ export const SpotifyPanel = ({ artist }: SpotifyPanelProps) => {
       {!configured && (
         <div className="empty-state tight">
           <Music2 size={24} />
-          <h3>Spotify client ID needed</h3>
-          <p>Add `VITE_SPOTIFY_CLIENT_ID` to enable automatic artist search and top tracks.</p>
+          <h3>Spotify setup needed</h3>
+          <p>Add your Spotify app Client ID in `.env.local` to enable automatic artist search and top tracks.</p>
           {artist.spotifyArtistId && (
             <iframe
               className="spotify-embed"

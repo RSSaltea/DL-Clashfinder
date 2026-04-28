@@ -32,13 +32,26 @@ Edit set times in `src/data/lineup.ts`. Change an artist string into an object:
 
 ## Spotify Setup
 
-Spotify Web API calls need a public client ID. Create a Spotify app, add your GitHub Pages URL and local URL as redirect URIs, then set:
+Spotify Web API calls need a public client ID. This app uses Spotify's PKCE login flow, so do not add a client secret to the frontend.
+
+1. Go to the Spotify Developer Dashboard and create an app.
+2. Copy the app's Client ID.
+3. In the Spotify app settings, add these redirect URIs:
+
+```text
+https://rssaltea.github.io/DL-Clashfinder/
+http://127.0.0.1:5173/
+```
+
+4. Copy `.env.example` to `.env.local` and set:
 
 ```bash
 VITE_SPOTIFY_CLIENT_ID=your_client_id_here
 ```
 
-Use `http://127.0.0.1:5173/` as the local redirect URI while developing.
+Restart `npm run dev` after changing `.env.local`.
+
+If Spotify starts the app in Development Mode, only allowlisted Spotify users can connect until the app has extended quota access.
 
 ## GitHub Pages
 

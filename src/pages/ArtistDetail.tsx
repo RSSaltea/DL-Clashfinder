@@ -1,10 +1,10 @@
-import { ArrowLeft, AlertTriangle } from "lucide-react";
+import { ArrowLeft, AlertTriangle, Clock3 } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { IntentButtons } from "../components/IntentButtons";
 import { SpotifyPanel } from "../components/SpotifyPanel";
 import { getArtistById, getDay, getStage, lineup } from "../data/lineup";
 import type { Intent, IntentMap, SetTimeMap } from "../types";
-import { getClashesForArtist } from "../utils/clash";
+import { getAllTightGaps, getClashesForArtist } from "../utils/clash";
 import { formatTimeRange, getEffectiveTime } from "../utils/time";
 
 interface ArtistDetailProps {
@@ -38,8 +38,21 @@ export const ArtistDetail = ({
   const day = getDay(artist.day);
   const stage = getStage(artist.stage);
   const time = getEffectiveTime(artist, setTimes);
-  const clashes = getClashesForArtist(artist, lineup, setTimes);
+  const selectedArtists = lineup.filter((lineupArtist) => Boolean(intents[lineupArtist.id]));
+  const clashes = intents[artist.id] ? getClashesForArtist(artist, selectedArtists, setTimes) : [];
+  const tightGaps = intents[artist.id]
+    ? getAllTightGaps(selectedArtists, setTimes).filter(
+        (gap) => gap.first.id === artist.id || gap.second.id === artist.id,
+      )
+    : [];
   const dayLabel = day?.label ?? "Time TBC";
+  const tightGapText = tightGaps
+    .map((gap) => {
+      const otherArtist = gap.first.id === artist.id ? gap.second : gap.first;
+      const relation = gap.first.id === artist.id ? "until" : "after";
+      return `${gap.minutes} min ${relation} ${otherArtist.name}`;
+    })
+    .join(", ");
 
   return (
     <main className="page-shell artist-detail">
@@ -67,6 +80,12 @@ export const ArtistDetail = ({
               <span>Clashes with {clashes.map((clash) => clash.name).join(", ")}</span>
             </div>
           )}
+          {tightGaps.length > 0 && (
+            <div className="clash-badge tight-gap wide">
+              <Clock3 size={17} />
+              <span>Within 10 mins: {tightGapText}</span>
+            </div>
+          )}
         </article>
 
         <article className="summary-panel">
@@ -79,10 +98,6 @@ export const ArtistDetail = ({
             <div>
               <span>Stage</span>
               <strong>{stage?.name}</strong>
-            </div>
-            <div>
-              <span>Poster order</span>
-              <strong>{artist.order}</strong>
             </div>
           </div>
         </article>
