@@ -1231,13 +1231,23 @@ p {
   display: grid;
   align-content: start;
   gap: 0.15rem;
-  min-height: 3rem;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-left-width: 5px;
   border-radius: 8px;
   background: rgba(20, 25, 29, 0.95);
   padding: 0.55rem 0.65rem;
+}
+
+.timetable-block--short {
+  gap: 0;
+  padding-block: 0.4rem;
+}
+
+.timetable-block--tiny {
+  align-content: center;
+  gap: 0;
+  padding-block: 0.15rem;
 }
 
 .timetable-block strong,
@@ -1255,6 +1265,12 @@ p {
   color: var(--muted);
   font-size: 0.82rem;
   font-style: normal;
+}
+
+.timetable-block--tiny span,
+.timetable-block--tiny em,
+.timetable-block--tiny p {
+  display: none;
 }
 
 .timetable-block--gap {

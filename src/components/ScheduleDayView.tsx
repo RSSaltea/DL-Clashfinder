@@ -107,6 +107,8 @@ export const ScheduleDayView = ({ schedule, showSupporters = false, viewMode = "
     const timelineStart = Math.floor(Math.min(...segments.map((segment) => segment.start)) / 60) * 60;
     const timelineEnd = Math.ceil(Math.max(...segments.map(getSegmentEnd)) / 60) * 60;
     const timelineDuration = Math.max(timelineEnd - timelineStart, 60);
+    const timelineHeight = Math.max(520, timelineDuration * 2.4);
+    const pixelsPerMinute = timelineHeight / timelineDuration;
     const ticks = Array.from(
       { length: Math.floor(timelineDuration / 60) + 1 },
       (_, index) => timelineStart + index * 60,
@@ -115,31 +117,36 @@ export const ScheduleDayView = ({ schedule, showSupporters = false, viewMode = "
     return (
       <div
         className="timetable"
-        style={{ minHeight: `${Math.max(520, timelineDuration * 1.15)}px` }}
+        style={{ height: `${timelineHeight}px` }}
       >
         <div className="timetable-axis" aria-hidden="true">
-          {ticks.map((tick) => (
-            <span
-              key={tick}
-              style={{ top: `${((tick - timelineStart) / timelineDuration) * 100}%` }}
-            >
-              {tick === 1440 ? "00:00" : minutesToTime(tick)}
-            </span>
-          ))}
+          {ticks.map((tick) => {
+            const top = (tick - timelineStart) * pixelsPerMinute;
+
+            return (
+              <span key={tick} style={{ top: `${top}px` }}>
+                {tick === 1440 ? "00:00" : minutesToTime(tick)}
+              </span>
+            );
+          })}
         </div>
         <div className="timetable-track">
-          {ticks.map((tick) => (
-            <div
-              className="timetable-line"
-              key={tick}
-              style={{ top: `${((tick - timelineStart) / timelineDuration) * 100}%` }}
-            />
-          ))}
+          {ticks.map((tick) => {
+            const top = (tick - timelineStart) * pixelsPerMinute;
+
+            return <div className="timetable-line" key={tick} style={{ top: `${top}px` }} />;
+          })}
           {segments.map((segment) => {
             const start = segment.start;
             const end = getSegmentEnd(segment);
-            const top = ((start - timelineStart) / timelineDuration) * 100;
-            const height = Math.max(((end - start) / timelineDuration) * 100, 4);
+            const duration = end - start;
+            const top = (start - timelineStart) * pixelsPerMinute;
+            const height = Math.max(duration * pixelsPerMinute - 2, 12);
+            const compactClass = duration < 20
+              ? " timetable-block--tiny"
+              : duration < 35
+                ? " timetable-block--short"
+                : "";
 
             if (segment.type === "set") {
               const item = segment.item;
@@ -147,9 +154,9 @@ export const ScheduleDayView = ({ schedule, showSupporters = false, viewMode = "
 
               return (
                 <article
-                  className={`timetable-block timetable-block--set stage-${item.artist.stage}`}
+                  className={`timetable-block timetable-block--set stage-${item.artist.stage}${compactClass}`}
                   key={segment.key}
-                  style={{ top: `${top}%`, height: `${height}%` }}
+                  style={{ top: `${top}px`, height: `${height}px` }}
                 >
                   <strong>{item.artist.name}</strong>
                   <span>{formatRange(item.start, item.end)} - {getStageLabel(item.artist)}</span>
@@ -162,9 +169,9 @@ export const ScheduleDayView = ({ schedule, showSupporters = false, viewMode = "
 
             return (
               <article
-                className="timetable-block timetable-block--gap"
+                className={`timetable-block timetable-block--gap${compactClass}`}
                 key={segment.key}
-                style={{ top: `${top}%`, height: `${height}%` }}
+                style={{ top: `${top}px`, height: `${height}px` }}
               >
                 <strong>{formatDuration(gap.end - gap.start)} free</strong>
                 <span>{formatRange(gap.start, gap.end)}</span>
