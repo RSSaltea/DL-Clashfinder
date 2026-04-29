@@ -5,7 +5,7 @@ import { IntentButtons } from "../components/IntentButtons";
 import { festivalDays, lineup } from "../data/lineup";
 import type { ClashDecisionMap, Intent, IntentMap, SetTimeMap } from "../types";
 import { loadFreeTimeWindow, saveFreeTimeWindow } from "../utils/localStorage";
-import { buildScheduleDay, getStageLabel } from "../utils/schedule";
+import { buildScheduleDay, getStageLabel, getStageTransferText } from "../utils/schedule";
 import { formatDuration, minutesToTime, timeToMinutes, windowEndToMins } from "../utils/time";
 
 interface FreeTimeProps {
@@ -112,6 +112,7 @@ export const FreeTime = ({ intents, setTimes, clashDecisions, onIntentChange }: 
               {schedule.gaps.map((gap) => {
                 const endLabel = gap.end === 1440 ? "00:00" : minutesToTime(gap.end);
                 const duration = formatDuration(gap.end - gap.start);
+                const transferText = getStageTransferText(gap);
 
                 return (
                   <div className="gap-card" key={`${day.id}-${gap.start}-${gap.end}`}>
@@ -127,6 +128,8 @@ export const FreeTime = ({ intents, setTimes, clashDecisions, onIntentChange }: 
                       <strong>{minutesToTime(gap.start)} - {endLabel}</strong>
                       <span>{duration} free</span>
                     </div>
+
+                    {transferText && <p className="transfer-note">{transferText}</p>}
 
                     {gap.playing.length === 0 ? (
                       <p className="muted" style={{ fontSize: "0.9rem" }}>

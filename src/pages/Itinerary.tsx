@@ -1,5 +1,6 @@
-import { useMemo } from "react";
-import { ScheduleDayView } from "../components/ScheduleDayView";
+import { CalendarDays, List } from "lucide-react";
+import { useMemo, useState } from "react";
+import { ScheduleDayView, type ScheduleViewMode } from "../components/ScheduleDayView";
 import { festivalDays, lineup } from "../data/lineup";
 import type { ClashDecisionMap, IntentMap, SetTimeMap } from "../types";
 import { loadFreeTimeWindow } from "../utils/localStorage";
@@ -13,6 +14,7 @@ interface ItineraryProps {
 }
 
 export const Itinerary = ({ intents, setTimes, clashDecisions }: ItineraryProps) => {
+  const [viewMode, setViewMode] = useState<ScheduleViewMode>("list");
   const freeTimeWindow = useMemo(() => loadFreeTimeWindow(), []);
   const windowStartMins = timeToMinutes(freeTimeWindow.start) ?? 600;
   const windowEndMins = windowEndToMins(freeTimeWindow.end);
@@ -41,11 +43,28 @@ export const Itinerary = ({ intents, setTimes, clashDecisions }: ItineraryProps)
           <p className="eyebrow">Your day-by-day route</p>
           <h1>Itinerary</h1>
         </div>
-        <p className="muted">Uses your clash choices and the Free Time window.</p>
+        <div className="view-toggle" aria-label="Itinerary view">
+          <button
+            type="button"
+            className={viewMode === "list" ? "is-active" : ""}
+            onClick={() => setViewMode("list")}
+          >
+            <List size={18} />
+            List
+          </button>
+          <button
+            type="button"
+            className={viewMode === "timetable" ? "is-active" : ""}
+            onClick={() => setViewMode("timetable")}
+          >
+            <CalendarDays size={18} />
+            Timetable
+          </button>
+        </div>
       </section>
 
       {schedules.map((schedule) => (
-        <ScheduleDayView key={schedule.dayId} schedule={schedule} />
+        <ScheduleDayView key={schedule.dayId} schedule={schedule} viewMode={viewMode} />
       ))}
     </main>
   );

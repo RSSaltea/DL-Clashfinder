@@ -1,7 +1,7 @@
 import { getStage, lineup } from "../data/lineup";
 import type { Artist, ClashDecisionMap, IntentMap, ProfilePlan, SetTimeMap } from "../types";
 import { getAllClashes } from "./clash";
-import { getEffectiveTime, timeToMinutes } from "./time";
+import { formatDuration, getEffectiveTime, timeToMinutes } from "./time";
 
 export interface ArtistSupport {
   supporters: string[];
@@ -61,6 +61,14 @@ export const getSupportText = (support?: ArtistSupport) => {
   }
 
   return support.supporters.join(", ");
+};
+
+export const getStageTransferText = (gap: ScheduleGap) => {
+  if (!gap.comingFrom || !gap.goingTo || gap.comingFrom.artist.stage === gap.goingTo.artist.stage) {
+    return "";
+  }
+
+  return `You have ${formatDuration(gap.end - gap.start)} to get from ${getStageLabel(gap.comingFrom.artist)} to ${getStageLabel(gap.goingTo.artist)}.`;
 };
 
 export const getSupportMap = (profiles: ProfilePlan[]) => {
