@@ -31,6 +31,14 @@ export interface ScheduleDay {
   excludedCount: number;
 }
 
+export interface StageTransfer {
+  id: string;
+  from: TimedArtist;
+  to: TimedArtist;
+  minutes: number;
+  text: string;
+}
+
 export const getTimedArtist = (
   artist: Artist,
   setTimes: SetTimeMap,
@@ -63,13 +71,48 @@ export const getSupportText = (support?: ArtistSupport) => {
   return support.supporters.join(", ");
 };
 
-export const getStageTransferText = (gap: ScheduleGap) => {
-  if (!gap.comingFrom || !gap.goingTo || gap.comingFrom.artist.stage === gap.goingTo.artist.stage) {
+export const getStageTransferTextBetween = (
+  from: TimedArtist | null | undefined,
+  to: TimedArtist | null | undefined,
+  minutes: number,
+) => {
+  if (!from || !to || from.artist.stage === to.artist.stage) {
     return "";
   }
 
-  return `You have ${formatDuration(gap.end - gap.start)} to get from ${getStageLabel(gap.comingFrom.artist)} to ${getStageLabel(gap.goingTo.artist)}.`;
+  const fromStage = getStageLabel(from.artist);
+  const toStage = getStageLabel(to.artist);
+
+  if (minutes <= 0) {
+    return `No time to get from ${fromStage} to ${toStage}.`;
+  }
+
+  return `You have ${formatDuration(minutes)} to get from ${fromStage} to ${toStage}.`;
 };
+
+export const getStageTransferText = (gap: ScheduleGap) =>
+  getStageTransferTextBetween(gap.comingFrom, gap.goingTo, gap.end - gap.start);
+
+export const getDirectStageTransfers = (attending: TimedArtist[]) =>
+  attending.slice(1).reduce<StageTransfer[]>((transfers, item, index) => {
+    const previous = attending[index];
+    const minutes = item.start - previous.end;
+    const text = minutes <= 0 && previous.artist.stage !== item.artist.stage
+      ? `No time between ${previous.artist.name} (${getStageLabel(previous.artist)}) and ${item.artist.name} (${getStageLabel(item.artist)}).`
+      : "";
+
+    if (text) {
+      transfers.push({
+        id: `${previous.artist.id}-${item.artist.id}`,
+        from: previous,
+        to: item,
+        minutes,
+        text,
+      });
+    }
+
+    return transfers;
+  }, []);
 
 export const getSupportMap = (profiles: ProfilePlan[]) => {
   const supportMap = new Map<string, ArtistSupport>();

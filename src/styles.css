@@ -1189,6 +1189,33 @@ p {
   font-size: 0.9rem;
 }
 
+.transfer-note--right {
+  margin-left: auto;
+}
+
+.transfer-note--handoff {
+  border-color: rgba(229, 72, 57, 0.34);
+  background: rgba(229, 72, 57, 0.1);
+  color: #ffd0c9;
+}
+
+.transfer-note--urgent {
+  border-color: rgba(229, 72, 57, 0.38);
+  background: rgba(229, 72, 57, 0.12);
+  color: #ffd0c9;
+}
+
+.transfer-warning-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  margin-bottom: 0.85rem;
+}
+
+.transfer-warning-list .transfer-note {
+  margin-top: 0;
+}
+
 .timetable {
   position: relative;
   display: grid;
@@ -1278,8 +1305,15 @@ p {
   background: rgba(40, 190, 179, 0.08);
 }
 
-.timetable-block--gap .transfer-note {
-  margin-top: 0.1rem;
+.timetable-transfer-note {
+  position: absolute;
+  right: 0.65rem;
+  z-index: 4;
+  max-width: min(30rem, calc(100% - 1.3rem));
+  margin-top: 0;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
+  text-align: right;
+  pointer-events: none;
 }
 
 .app-footer {
