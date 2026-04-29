@@ -184,6 +184,10 @@ export const ScheduleDayView = ({
       { length: Math.floor(timelineDuration / 60) + 1 },
       (_, index) => timelineStart + index * 60,
     );
+    const quarterTicks = Array.from(
+      { length: Math.floor(timelineDuration / 15) },
+      (_, index) => timelineStart + (index + 1) * 15,
+    ).filter((tick) => tick < timelineEnd && tick % 60 !== 0);
     const setLayouts = getTimetableSetLayouts(schedule.attending);
 
     return (
@@ -199,6 +203,10 @@ export const ScheduleDayView = ({
           })}
         </div>
         <div className="timetable-track">
+          {quarterTicks.map((tick) => {
+            const top = (tick - timelineStart) * pixelsPerMinute;
+            return <div className="timetable-line timetable-line--minor" key={tick} style={{ top: `${top}px` }} />;
+          })}
           {ticks.map((tick) => {
             const top = (tick - timelineStart) * pixelsPerMinute;
             return <div className="timetable-line" key={tick} style={{ top: `${top}px` }} />;
@@ -274,6 +282,10 @@ export const ScheduleDayView = ({
       { length: Math.floor(timelineDuration / 60) + 1 },
       (_, index) => timelineStart + index * 60,
     );
+    const quarterTicks = Array.from(
+      { length: Math.floor(timelineDuration / 15) },
+      (_, index) => timelineStart + (index + 1) * 15,
+    ).filter((tick) => tick < timelineEnd && tick % 60 !== 0);
     const visibleAttending = freeTimeOnly ? [] : schedule.attending;
 
     const renderStagedFreeRow = () =>
@@ -325,6 +337,10 @@ export const ScheduleDayView = ({
             const stageItems = visibleAttending.filter((item) => item.artist.stage === stage.id);
             return (
               <div key={stage.id} className="timetable-track">
+                {quarterTicks.map((tick) => {
+                  const top = (tick - timelineStart) * pixelsPerMinute;
+                  return <div className="timetable-line timetable-line--minor" key={tick} style={{ top: `${top}px` }} />;
+                })}
                 {ticks.map((tick) => {
                   const top = (tick - timelineStart) * pixelsPerMinute;
                   return <div className="timetable-line" key={tick} style={{ top: `${top}px` }} />;
