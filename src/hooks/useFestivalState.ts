@@ -263,10 +263,15 @@ export const useFestivalState = () => {
 
         applyAccountPlan(nextPlan);
         await saveAccountPlan(account.token, nextPlan);
-      } catch {
+      } catch (error) {
         if (!cancelled) {
-          setAccount(null);
-          saveAccountSession(null);
+          const msg = error instanceof Error ? error.message : "";
+          const sessionExpired = msg.toLowerCase().includes("session expired") || msg.toLowerCase().includes("log in again");
+          if (sessionExpired) {
+            setAccount(null);
+            saveAccountSession(null);
+          }
+          // On network errors keep the session — user stays logged in with local data
         }
       } finally {
         if (!cancelled) {
