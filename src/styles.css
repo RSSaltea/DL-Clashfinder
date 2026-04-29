@@ -1,5 +1,5 @@
-/* Light mode overrides — applied via data-theme="light" on <html> */
-[data-theme="light"] {
+/* Light mode — :root[data-theme="light"] has specificity 0-2-0, beats :root at 0-1-0 */
+:root[data-theme="light"] {
   color-scheme: light;
   --bg: #f4f0e8;
   --bg-2: #ece8df;
@@ -20,7 +20,12 @@
 }
 
 [data-theme="light"] .app-header {
-  background: rgba(244, 240, 232, 0.9);
+  background: rgba(244, 240, 232, 0.92);
+  border-bottom-color: var(--line);
+}
+
+[data-theme="light"] .app-nav {
+  border-top-color: var(--line);
 }
 
 [data-theme="light"] .download-logo {
@@ -33,6 +38,163 @@
 
 [data-theme="light"] .app-nav a.active {
   background: rgba(242, 162, 58, 0.15);
+}
+
+[data-theme="light"] .mobile-menu-toggle,
+[data-theme="light"] .secondary-button,
+[data-theme="light"] .icon-button,
+[data-theme="light"] .icon-text-button,
+[data-theme="light"] .choice-button {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="light"] .toolbar-band {
+  border-color: var(--line);
+  background:
+    linear-gradient(110deg, rgba(229, 72, 57, 0.1), rgba(242, 162, 58, 0.06) 42%, rgba(40, 190, 179, 0.05)),
+    var(--panel);
+}
+
+[data-theme="light"] .filters-panel {
+  border-color: var(--line);
+  background: rgba(229, 224, 214, 0.9);
+}
+
+[data-theme="light"] .day-heading {
+  border-bottom-color: var(--line);
+}
+
+[data-theme="light"] .stat-grid div {
+  border-color: var(--line);
+  background: rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .artist-card,
+[data-theme="light"] .summary-panel,
+[data-theme="light"] .clash-card,
+[data-theme="light"] .spotify-panel {
+  border-color: var(--line);
+  background: var(--panel);
+}
+
+[data-theme="light"] .artist-card.is-selected {
+  background: var(--panel-2);
+}
+
+[data-theme="light"] .stage-title {
+  background: rgba(244, 240, 232, 0.94);
+  border-color: var(--line);
+}
+
+[data-theme="light"] .auth-modal {
+  background: var(--panel);
+  border-color: var(--line);
+}
+
+[data-theme="light"] .auth-tabs button {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .form-field input,
+[data-theme="light"] .reset-question input,
+[data-theme="light"] .reset-question select {
+  background: rgba(255, 255, 255, 0.7);
+  border-color: var(--line);
+  color: var(--text);
+}
+
+[data-theme="light"] .search-field,
+[data-theme="light"] .select-field,
+[data-theme="light"] .text-field {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="light"] .time-inputs input {
+  background: rgba(255, 255, 255, 0.6);
+  border-color: var(--line);
+}
+
+[data-theme="light"] .compact-list div,
+[data-theme="light"] .compact-list a {
+  border-color: var(--line);
+  background: rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="light"] .itinerary-item {
+  border-color: var(--line);
+  background: var(--panel);
+}
+
+[data-theme="light"] .empty-state {
+  background: rgba(229, 224, 214, 0.6);
+  border-color: var(--line-strong);
+}
+
+[data-theme="light"] .file-drop {
+  background: rgba(229, 224, 214, 0.8);
+}
+
+[data-theme="light"] .backup-panel {
+  border-color: var(--line);
+  background: rgba(229, 224, 214, 0.55);
+}
+
+[data-theme="light"] .import-pill {
+  background: rgba(0, 0, 0, 0.05);
+  border-color: var(--line);
+}
+
+[data-theme="light"] .group-code-list button {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="light"] .modal-backdrop {
+  background: rgba(0, 0, 0, 0.55);
+}
+
+[data-theme="light"] .tt-stage-label,
+[data-theme="light"] .tt-header,
+[data-theme="light"] .tt-corner {
+  background: var(--panel);
+}
+
+[data-theme="light"] .tt-track {
+  background: var(--bg-2);
+}
+
+[data-theme="light"] .tt-outer {
+  border-color: var(--line);
+}
+
+[data-theme="light"] .group-members-panel {
+  border-color: var(--line);
+}
+
+[data-theme="light"] .group-members-header {
+  background: var(--panel);
+  border-bottom-color: var(--line);
+}
+
+[data-theme="light"] .member-row {
+  border-bottom-color: var(--line);
+}
+
+[data-theme="light"] .spotify-connect-card,
+[data-theme="light"] .spotify-artist {
+  border-color: var(--line);
+  background: rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="light"] .gap-card {
+  background: var(--panel);
+  border-color: rgba(40, 190, 179, 0.25);
+}
+
+[data-theme="light"] .artist-hero {
+  border-color: var(--line);
+  background:
+    linear-gradient(120deg, rgba(229, 72, 57, 0.12), rgba(40, 190, 179, 0.06)),
+    var(--panel);
 }
 
 :root {
