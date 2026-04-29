@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import { getDay } from "../data/lineup";
 import type { ScheduleDay, ScheduleGap, TimedArtist } from "../utils/schedule";
 import { getDirectStageTransfers, getStageLabel, getStageTransferText, getSupportText } from "../utils/schedule";
@@ -6,6 +7,11 @@ import { formatDuration, minutesToTime } from "../utils/time";
 type ScheduleSegment =
   | { type: "set"; key: string; start: number; item: TimedArtist }
   | { type: "gap"; key: string; start: number; item: ScheduleGap };
+
+interface TimetableSetLayout {
+  lane: number;
+  laneCount: number;
+}
 
 interface ScheduleDayViewProps {
   schedule: ScheduleDay;
@@ -23,6 +29,83 @@ const getSegmentEnd = (segment: ScheduleSegment) =>
 
 const renderTransferNote = (text: string, className = "") =>
   text ? <p className={`transfer-note${className ? ` ${className}` : ""}`}>{text}</p> : null;
+
+const getTimetableSetLayouts = (items: TimedArtist[]) => {
+  const layouts = new Map<string, TimetableSetLayout>();
+  const sorted = [...items].sort((a, b) => {
+    if (a.start !== b.start) {
+      return a.start - b.start;
+    }
+
+    if (a.end !== b.end) {
+      return a.end - b.end;
+    }
+
+    return a.artist.order - b.artist.order;
+  });
+
+  const applyClusterLayout = (cluster: TimedArtist[]) => {
+    const laneEnds: number[] = [];
+    const clusteredLayouts: Array<{ item: TimedArtist; lane: number }> = [];
+
+    cluster.forEach((item) => {
+      const freeLane = laneEnds.findIndex((laneEnd) => laneEnd <= item.start);
+      const lane = freeLane === -1 ? laneEnds.length : freeLane;
+
+      laneEnds[lane] = item.end;
+      clusteredLayouts.push({ item, lane });
+    });
+
+    const laneCount = Math.max(1, laneEnds.length);
+    clusteredLayouts.forEach(({ item, lane }) => {
+      layouts.set(item.artist.id, { lane, laneCount });
+    });
+  };
+
+  let cluster: TimedArtist[] = [];
+  let clusterEnd = -1;
+
+  sorted.forEach((item) => {
+    if (cluster.length > 0 && item.start >= clusterEnd) {
+      applyClusterLayout(cluster);
+      cluster = [];
+      clusterEnd = -1;
+    }
+
+    cluster.push(item);
+    clusterEnd = Math.max(clusterEnd, item.end);
+  });
+
+  if (cluster.length > 0) {
+    applyClusterLayout(cluster);
+  }
+
+  return layouts;
+};
+
+const getTimetableBlockStyle = (
+  top: number,
+  height: number,
+  layout?: TimetableSetLayout,
+): CSSProperties => {
+  const style: CSSProperties = {
+    top: `${top}px`,
+    height: `${height}px`,
+  };
+
+  if (!layout || layout.laneCount <= 1) {
+    return style;
+  }
+
+  const laneWidth = 100 / layout.laneCount;
+
+  return {
+    ...style,
+    left: `calc(${layout.lane * laneWidth}% + ${layout.lane === 0 ? "0rem" : "0.25rem"})`,
+    right: "auto",
+    width: `calc(${laneWidth}% - 0.35rem)`,
+  };
+};
 
 export const ScheduleDayView = ({ schedule, showSupporters = false, viewMode = "list" }: ScheduleDayViewProps) => {
   const day = getDay(schedule.dayId);
@@ -123,6 +206,7 @@ export const ScheduleDayView = ({ schedule, showSupporters = false, viewMode = "
       { length: Math.floor(timelineDuration / 60) + 1 },
       (_, index) => timelineStart + index * 60,
     );
+    const setLayouts = getTimetableSetLayouts(schedule.attending);
 
     return (
       <div
@@ -163,17 +247,23 @@ export const ScheduleDayView = ({ schedule, showSupporters = false, viewMode = "
               const supporters = getSupportText(item.supporters);
               const directTransfer = directTransferByDestination.get(item.artist.id);
               const transferText = directTransfer?.text ?? gapTransferByDestination.get(item.artist.id) ?? "";
+              const layout = setLayouts.get(item.artist.id);
+              const lanedClass = layout && layout.laneCount > 1 ? " timetable-block--laned" : "";
 
               return (
                 <article
-                  className={`timetable-block timetable-block--set stage-${item.artist.stage}${compactClass}`}
+                  className={`timetable-block timetable-block--set stage-${item.artist.stage}${compactClass}${lanedClass}`}
                   key={segment.key}
-                  style={{ top: `${top}px`, height: `${height}px` }}
+                  style={getTimetableBlockStyle(top, height, layout)}
                 >
                   <div className="timetable-block__main">
-                    <strong>{item.artist.name}</strong>
+                    <div className="timetable-block__title">
+                      <strong>{item.artist.name}</strong>
+                      {showSupporters && supporters && (
+                        <em className="timetable-block__supporters">Picked by {supporters}</em>
+                      )}
+                    </div>
                     <span>{formatRange(item.start, item.end)} - {getStageLabel(item.artist)}</span>
-                    {showSupporters && supporters && <em>Picked by {supporters}</em>}
                   </div>
                   {transferText && (
                     <p

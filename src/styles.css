@@ -1274,6 +1274,25 @@ p {
   gap: 0.15rem;
 }
 
+.timetable-block__title {
+  display: flex;
+  min-width: 0;
+  align-items: baseline;
+  gap: 0.45rem;
+}
+
+.timetable-block__title strong {
+  flex: 0 1 auto;
+}
+
+.timetable-block__supporters {
+  flex: 1 1 auto;
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-style: normal;
+  font-weight: 500;
+}
+
 .timetable-block__transfer {
   flex: 0 1 min(31rem, 48%);
   justify-self: end;
@@ -1281,6 +1300,17 @@ p {
   margin-top: 0;
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
   text-align: right;
+}
+
+.timetable-block--laned {
+  gap: 0.45rem;
+  padding-inline: 0.55rem;
+}
+
+.timetable-block--laned .timetable-block__transfer {
+  flex-basis: min(14rem, 46%);
+  padding: 0.35rem 0.45rem;
+  font-size: 0.78rem;
 }
 
 .timetable-block--short {
