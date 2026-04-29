@@ -82,8 +82,8 @@ begin
     end if;
   end loop;
 
-  if jsonb_array_length(output) < 2 then
-    raise exception 'Pick and answer at least two reset questions.';
+  if jsonb_array_length(output) < 1 then
+    raise exception 'Answer at least one reset question.';
   end if;
 
   return output;

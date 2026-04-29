@@ -343,13 +343,29 @@ p {
 }
 
 .form-field input,
-.reset-question input {
+.reset-question input,
+.reset-question select {
   min-height: 2.65rem;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: rgba(8, 9, 10, 0.72);
   color: var(--text);
   padding: 0.6rem 0.75rem;
+}
+
+.reset-question-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 0.5rem;
+}
+
+.reset-question-row .reset-question:first-child {
+  min-width: 0;
+}
+
+.reset-question-remove {
+  margin-bottom: 0.2rem;
 }
 
 .reset-question-list {

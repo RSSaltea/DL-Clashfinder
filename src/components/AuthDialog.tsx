@@ -1,4 +1,4 @@
-import { LogIn, LogOut, UserRound, X } from "lucide-react";
+import { LogIn, LogOut, Plus, Trash2, UserRound, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import type { AccountSession } from "../types";
@@ -21,6 +21,8 @@ interface AuthDialogProps {
 const getQuestionLabel = (id: string) =>
   resetQuestions.find((question) => question.id === id)?.label ?? id;
 
+const firstResetQuestionId = resetQuestions[0]?.id ?? "first_festival";
+
 export const AuthDialog = ({
   account,
   configured,
@@ -38,23 +40,29 @@ export const AuthDialog = ({
   const [confirmPassword, setConfirmPassword] = useState("");
   const [registerName, setRegisterName] = useState(profileName);
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [registerQuestionIds, setRegisterQuestionIds] = useState<string[]>([firstResetQuestionId]);
   const [resetQuestionIds, setResetQuestionIds] = useState<string[]>([]);
   const [newPassword, setNewPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
 
   const selectedAnswers = useMemo<ResetAnswer[]>(
-    () =>
-      Object.entries(answers)
-        .map(([questionId, answer]) => ({ questionId, answer: answer.trim() }))
-        .filter((answer) => answer.answer),
-    [answers],
+    () => {
+      const activeQuestionIds = mode === "reset" ? resetQuestionIds : registerQuestionIds;
+
+      return activeQuestionIds
+        .map((questionId) => ({ questionId, answer: (answers[questionId] ?? "").trim() }))
+        .filter((answer) => answer.answer);
+    },
+    [answers, mode, registerQuestionIds, resetQuestionIds],
   );
+  const availableRegisterQuestions = resetQuestions.filter((question) => !registerQuestionIds.includes(question.id));
 
   const resetForm = () => {
     setPassword("");
     setConfirmPassword("");
     setAnswers({});
+    setRegisterQuestionIds([firstResetQuestionId]);
     setResetQuestionIds([]);
     setNewPassword("");
     setMessage("");
@@ -99,12 +107,60 @@ export const AuthDialog = ({
         throw new Error("The passwords do not match.");
       }
 
-      if (selectedAnswers.length < 2) {
-        throw new Error("Pick and answer at least two reset questions.");
+      if (selectedAnswers.length < 1) {
+        throw new Error("Answer at least one reset question.");
       }
 
       await onRegister(username, password, registerName || profileName || "Me", selectedAnswers);
     });
+
+  const addRegisterQuestion = () => {
+    const nextQuestion = availableRegisterQuestions[0];
+
+    if (!nextQuestion) {
+      return;
+    }
+
+    setRegisterQuestionIds((current) => [...current, nextQuestion.id]);
+  };
+
+  const updateRegisterQuestion = (index: number, questionId: string) => {
+    setRegisterQuestionIds((current) => {
+      const previousQuestionId = current[index];
+      const next = current.map((item, itemIndex) => (itemIndex === index ? questionId : item));
+
+      setAnswers((currentAnswers) => {
+        const nextAnswers = { ...currentAnswers };
+
+        if (previousQuestionId && !next.includes(previousQuestionId)) {
+          delete nextAnswers[previousQuestionId];
+        }
+
+        return nextAnswers;
+      });
+
+      return next;
+    });
+  };
+
+  const removeRegisterQuestion = (index: number) => {
+    setRegisterQuestionIds((current) => {
+      const removedQuestionId = current[index];
+      const next = current.filter((_, itemIndex) => itemIndex !== index);
+
+      setAnswers((currentAnswers) => {
+        const nextAnswers = { ...currentAnswers };
+
+        if (removedQuestionId && !next.includes(removedQuestionId)) {
+          delete nextAnswers[removedQuestionId];
+        }
+
+        return nextAnswers;
+      });
+
+      return next.length > 0 ? next : [firstResetQuestionId];
+    });
+  };
 
   const loadResetQuestions = async () => {
     setBusy(true);
@@ -219,20 +275,61 @@ export const AuthDialog = ({
                 </label>
 
                 <div className="reset-question-list">
-                  {resetQuestions.map((question) => (
-                    <label className="reset-question" key={question.id}>
-                      <span>{question.label}</span>
-                      <input
-                        placeholder="Answer"
-                        value={answers[question.id] ?? ""}
-                        onChange={(event) => setAnswers((current) => ({
-                          ...current,
-                          [question.id]: event.target.value,
-                        }))}
-                      />
-                    </label>
-                  ))}
+                  {registerQuestionIds.map((questionId, index) => {
+                    const selectableQuestions = resetQuestions.filter((question) =>
+                      question.id === questionId || !registerQuestionIds.includes(question.id)
+                    );
+
+                    return (
+                      <div className="reset-question-row" key={`${questionId}-${index}`}>
+                        <label className="reset-question">
+                          {index === 0 ? (
+                            <span>{getQuestionLabel(questionId)}</span>
+                          ) : (
+                            <>
+                              <span>Reset question {index + 1}</span>
+                              <select
+                                value={questionId}
+                                onChange={(event) => updateRegisterQuestion(index, event.target.value)}
+                              >
+                                {selectableQuestions.map((question) => (
+                                  <option key={question.id} value={question.id}>
+                                    {question.label}
+                                  </option>
+                                ))}
+                              </select>
+                            </>
+                          )}
+                          <input
+                            placeholder="Answer"
+                            value={answers[questionId] ?? ""}
+                            onChange={(event) => setAnswers((current) => ({
+                              ...current,
+                              [questionId]: event.target.value,
+                            }))}
+                          />
+                        </label>
+                        {index > 0 && (
+                          <button
+                            className="icon-button reset-question-remove"
+                            type="button"
+                            onClick={() => removeRegisterQuestion(index)}
+                            aria-label="Remove reset question"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
+
+                {availableRegisterQuestions.length > 0 && (
+                  <button className="secondary-button fit-content" type="button" onClick={addRegisterQuestion}>
+                    <Plus size={18} />
+                    Add reset question
+                  </button>
+                )}
 
                 <button className="primary-button" type="button" disabled={!configured || busy} onClick={submitRegister}>
                   {busy ? "Creating..." : "Create account"}
