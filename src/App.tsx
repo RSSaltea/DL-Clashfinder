@@ -1,6 +1,7 @@
 import { AlertTriangle, CalendarDays, ExternalLink, Map, Route as RouteIcon, Timer, UsersRound } from "lucide-react";
 import { useEffect } from "react";
 import { HashRouter, NavLink, Route, Routes, useLocation } from "react-router-dom";
+import { AuthDialog } from "./components/AuthDialog";
 import { festival } from "./data/lineup";
 import { useFestivalState } from "./hooks/useFestivalState";
 import { ArtistDetail } from "./pages/ArtistDetail";
@@ -62,6 +63,16 @@ const AppRoutes = () => {
             <RouteIcon size={18} />
             <span>Group Itinerary</span>
           </NavLink>
+          <AuthDialog
+            account={festivalState.account}
+            configured={festivalState.accountConfigured}
+            profileName={festivalState.profileName}
+            onLogin={festivalState.loginFestivalAccount}
+            onRegister={festivalState.registerFestivalAccount}
+            onLogout={festivalState.logoutFestivalAccount}
+            onLoadResetQuestions={festivalState.getAccountResetQuestions}
+            onResetPassword={festivalState.resetFestivalAccountPassword}
+          />
         </nav>
       </header>
 
@@ -124,6 +135,7 @@ const AppRoutes = () => {
             <Compare
               intents={festivalState.intents}
               profileName={festivalState.profileName}
+              accountUsername={festivalState.account?.username}
               setProfileName={festivalState.setProfileName}
               setTimes={festivalState.setTimes}
               imports={festivalState.imports}
@@ -148,6 +160,7 @@ const AppRoutes = () => {
             <GroupItinerary
               intents={festivalState.intents}
               profileName={festivalState.profileName}
+              accountUsername={festivalState.account?.username}
               setTimes={festivalState.setTimes}
               imports={festivalState.imports}
               syncedImports={festivalState.syncedImports}

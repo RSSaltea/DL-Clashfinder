@@ -8,6 +8,7 @@ export const createExportPayload = (
   clashDecisions: ClashDecisionMap = {},
   groupCode = "",
   groupClashVotes: ClashDecisionMap = {},
+  accountUsername = "",
 ): FestivalExport => ({
   version: 1,
   exportedAt: new Date().toISOString(),
@@ -21,6 +22,7 @@ export const createExportPayload = (
   clashDecisions,
   groupClashVotes,
   groupCode: groupCode.trim() || undefined,
+  accountUsername: accountUsername.trim() || undefined,
 });
 
 export const downloadJson = (payload: FestivalExport) => {

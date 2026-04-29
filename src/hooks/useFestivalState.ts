@@ -1,5 +1,24 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { ClashDecisionMap, FestivalExport, GroupClashVoteMap, Intent, IntentMap, SetTimeMap } from "../types";
+import type {
+  AccountPlan,
+  AccountSession,
+  ClashDecisionMap,
+  FestivalExport,
+  GroupClashVoteMap,
+  Intent,
+  IntentMap,
+  SetTimeMap,
+} from "../types";
+import {
+  type ResetAnswer,
+  getAccountResetQuestions,
+  isAccountSyncConfigured,
+  loadAccountPlan,
+  loginAccount,
+  registerAccount,
+  resetAccountPassword,
+  saveAccountPlan,
+} from "../utils/accountSync";
 import { createExportPayload } from "../utils/export";
 import {
   type GroupSyncState,
@@ -10,6 +29,7 @@ import {
 } from "../utils/groupSync";
 import {
   getNextIntent,
+  loadAccountSession,
   loadClashDecisions,
   loadGroupCode,
   loadGroupCodes,
@@ -19,6 +39,7 @@ import {
   loadImports,
   loadIntentMap,
   loadProfileName,
+  saveAccountSession,
   saveClashDecisions,
   saveGroupCode,
   saveGroupCodes,
@@ -42,12 +63,64 @@ const getInitialGroupSyncState = (): GroupSyncState => {
   };
 };
 
+const emptyAccountPlan = (profileName = "Me"): AccountPlan => ({
+  version: 1,
+  profileName,
+  intents: {},
+  imports: [],
+  clashDecisions: {},
+  groupClashVotesByCode: {},
+  groupCode: "",
+  groupCodes: [],
+});
+
+const hasAccountPlanContent = (plan: AccountPlan | null | undefined) =>
+  Boolean(plan && (
+    Object.keys(plan.intents).length > 0 ||
+    plan.imports.length > 0 ||
+    Object.keys(plan.clashDecisions).length > 0 ||
+    Object.keys(plan.groupClashVotesByCode).length > 0 ||
+    plan.groupCodes.length > 0 ||
+    plan.groupCode
+  ));
+
+const mergeAccountPlans = (remotePlan: AccountPlan | null, localPlan: AccountPlan): AccountPlan => {
+  const remote = remotePlan ?? emptyAccountPlan(localPlan.profileName);
+
+  return {
+    version: 1,
+    profileName: localPlan.profileName || remote.profileName || "Me",
+    intents: {
+      ...remote.intents,
+      ...localPlan.intents,
+    },
+    imports: localPlan.imports.length > 0 ? localPlan.imports : remote.imports,
+    clashDecisions: {
+      ...remote.clashDecisions,
+      ...localPlan.clashDecisions,
+    },
+    groupClashVotesByCode: {
+      ...remote.groupClashVotesByCode,
+      ...localPlan.groupClashVotesByCode,
+    },
+    groupCode: localPlan.groupCode || remote.groupCode || "",
+    groupCodes: Array.from(new Set([
+      ...remote.groupCodes,
+      ...localPlan.groupCodes,
+      remote.groupCode,
+      localPlan.groupCode,
+    ].filter(Boolean))),
+  };
+};
+
 export const useFestivalState = () => {
   const [intents, setIntents] = useState<IntentMap>(() => loadIntentMap());
   const [profileName, setProfileNameState] = useState(() => loadProfileName());
   const [imports, setImportsState] = useState<FestivalExport[]>(() => loadImports());
   const [syncedImports, setSyncedImports] = useState<FestivalExport[]>([]);
   const [clashDecisions, setClashDecisions] = useState<ClashDecisionMap>(() => loadClashDecisions());
+  const [account, setAccount] = useState<AccountSession | null>(() => loadAccountSession());
+  const [accountReady, setAccountReady] = useState(() => !loadAccountSession());
   const [groupCode, setGroupCodeState] = useState(() => loadGroupCode());
   const [groupCodeDraft, setGroupCodeDraftState] = useState(() => loadGroupCode());
   const [groupCodes, setGroupCodes] = useState<string[]>(() => loadGroupCodes(loadGroupCode()));
@@ -56,13 +129,83 @@ export const useFestivalState = () => {
   );
   const [groupSyncState, setGroupSyncState] = useState<GroupSyncState>(() => getInitialGroupSyncState());
   const groupMemberId = useMemo(() => loadGroupMemberId(), []);
+  const activeMemberId = account?.userId ?? groupMemberId;
   const syncConfigured = useMemo(() => isGroupSyncConfigured(), []);
+  const accountConfigured = useMemo(() => isAccountSyncConfigured(), []);
   const activeGroupCodeRef = useRef(normaliseGroupCode(groupCode));
   const setTimes = useMemo<SetTimeMap>(() => ({}), []);
   const groupClashVotes = useMemo(
     () => (groupCode ? groupClashVotesByCode[groupCode] ?? {} : {}),
     [groupClashVotesByCode, groupCode],
   );
+
+  const getLocalAccountPlan = useCallback((): AccountPlan => ({
+    version: 1,
+    profileName,
+    intents,
+    imports,
+    clashDecisions,
+    groupClashVotesByCode,
+    groupCode,
+    groupCodes,
+  }), [clashDecisions, groupClashVotesByCode, groupCode, groupCodes, imports, intents, profileName]);
+
+  const applyAccountPlan = useCallback((plan: AccountPlan) => {
+    setProfileNameState(plan.profileName || "Me");
+    setIntents(plan.intents ?? {});
+    setImportsState(plan.imports ?? []);
+    setClashDecisions(plan.clashDecisions ?? {});
+    setGroupClashVotesByCode(plan.groupClashVotesByCode ?? {});
+    setGroupCodeState(plan.groupCode ?? "");
+    setGroupCodeDraftState(plan.groupCode ?? "");
+    setGroupCodes(plan.groupCodes ?? []);
+    setSyncedImports([]);
+  }, []);
+
+  const completeAccountSignIn = useCallback(async (
+    session: AccountSession,
+    remotePlan: AccountPlan | null,
+  ) => {
+    const localPlan = getLocalAccountPlan();
+    const nextPlan = hasAccountPlanContent(localPlan)
+      ? mergeAccountPlans(remotePlan, localPlan)
+      : remotePlan ?? localPlan;
+
+    setAccount(session);
+    setAccountReady(true);
+    saveAccountSession(session);
+    applyAccountPlan(nextPlan);
+    await saveAccountPlan(session.token, nextPlan);
+  }, [applyAccountPlan, getLocalAccountPlan]);
+
+  const loginFestivalAccount = useCallback(async (username: string, password: string) => {
+    const result = await loginAccount(username, password);
+    await completeAccountSignIn(result.session, result.plan);
+  }, [completeAccountSignIn]);
+
+  const registerFestivalAccount = useCallback(async (
+    username: string,
+    password: string,
+    displayName: string,
+    answers: ResetAnswer[],
+  ) => {
+    const result = await registerAccount(username, password, displayName, answers);
+    await completeAccountSignIn(result.session, result.plan);
+  }, [completeAccountSignIn]);
+
+  const logoutFestivalAccount = useCallback(() => {
+    setAccount(null);
+    setAccountReady(true);
+    saveAccountSession(null);
+  }, []);
+
+  const resetFestivalAccountPassword = useCallback(async (
+    username: string,
+    answers: ResetAnswer[],
+    newPassword: string,
+  ) => {
+    await resetAccountPassword(username, answers, newPassword);
+  }, []);
 
   useEffect(() => {
     activeGroupCodeRef.current = normaliseGroupCode(groupCode);
@@ -96,6 +239,62 @@ export const useFestivalState = () => {
   useEffect(() => {
     saveGroupCodes(groupCodes);
   }, [groupCodes]);
+
+  useEffect(() => {
+    if (!account) {
+      setAccountReady(true);
+      return;
+    }
+
+    let cancelled = false;
+
+    const hydrateAccount = async () => {
+      try {
+        const remotePlan = await loadAccountPlan(account.token);
+
+        if (cancelled) {
+          return;
+        }
+
+        const localPlan = getLocalAccountPlan();
+        const nextPlan = hasAccountPlanContent(localPlan)
+          ? mergeAccountPlans(remotePlan, localPlan)
+          : remotePlan ?? localPlan;
+
+        applyAccountPlan(nextPlan);
+        await saveAccountPlan(account.token, nextPlan);
+      } catch {
+        if (!cancelled) {
+          setAccount(null);
+          saveAccountSession(null);
+        }
+      } finally {
+        if (!cancelled) {
+          setAccountReady(true);
+        }
+      }
+    };
+
+    if (!accountReady) {
+      void hydrateAccount();
+    }
+
+    return () => {
+      cancelled = true;
+    };
+  }, [account, accountReady, applyAccountPlan, getLocalAccountPlan]);
+
+  useEffect(() => {
+    if (!account || !accountReady) {
+      return undefined;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      void saveAccountPlan(account.token, getLocalAccountPlan()).catch(() => undefined);
+    }, 1200);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [account, accountReady, getLocalAccountPlan]);
 
   const selectedArtistIds = useMemo(() => new Set(Object.keys(intents)), [intents]);
 
@@ -226,11 +425,12 @@ export const useFestivalState = () => {
         clashDecisions,
         currentGroupCode,
         votesForGroup,
+        account?.username ?? "",
       );
 
-      await pushGroupPlan(currentGroupCode, groupMemberId, payload);
+      await pushGroupPlan(currentGroupCode, activeMemberId, payload);
 
-      const remotePlans = await pullGroupPlans(currentGroupCode, groupMemberId);
+      const remotePlans = await pullGroupPlans(currentGroupCode, activeMemberId);
 
       if (activeGroupCodeRef.current !== currentGroupCode) {
         return;
@@ -261,9 +461,10 @@ export const useFestivalState = () => {
     }
   }, [
     clashDecisions,
+    account?.username,
     groupCode,
     groupClashVotesByCode,
-    groupMemberId,
+    activeMemberId,
     intents,
     profileName,
     setTimes,
@@ -321,5 +522,12 @@ export const useFestivalState = () => {
     imports,
     addImports,
     removeImport,
+    account,
+    accountConfigured,
+    loginFestivalAccount,
+    registerFestivalAccount,
+    logoutFestivalAccount,
+    getAccountResetQuestions,
+    resetFestivalAccountPassword,
   };
 };

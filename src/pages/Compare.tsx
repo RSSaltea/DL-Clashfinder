@@ -5,6 +5,7 @@ import type { GroupSyncState } from "../utils/groupSync";
 interface CompareProps {
   intents: IntentMap;
   profileName: string;
+  accountUsername?: string;
   setProfileName: (value: string) => void;
   setTimes: SetTimeMap;
   imports: FestivalExport[];

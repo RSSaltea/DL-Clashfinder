@@ -20,6 +20,7 @@ import { formatDuration, getEffectiveTime, minutesToTime, timeToMinutes, windowE
 interface ComparisonViewProps {
   intents: IntentMap;
   profileName: string;
+  accountUsername?: string;
   setProfileName: (value: string) => void;
   setTimes: SetTimeMap;
   imports: FestivalExport[];
@@ -57,6 +58,7 @@ const choiceButtonClass = (selected: boolean) => `choice-button ${selected ? "is
 export const ComparisonView = ({
   intents,
   profileName,
+  accountUsername = "",
   setProfileName,
   setTimes,
   imports,
@@ -81,10 +83,11 @@ export const ComparisonView = ({
 
   const profiles = useMemo<ProfilePlan[]>(
     () => [
-      { id: "local", name: profileName || "Me", intents, setTimes, groupClashVotes, groupCode },
+      { id: "local", name: profileName || "Me", accountUsername, intents, setTimes, groupClashVotes, groupCode },
       ...syncedImports.map((item, index) => ({
         id: `synced-${item.profileName}-${index}`,
         name: item.profileName,
+        accountUsername: item.accountUsername,
         intents: item.intents,
         setTimes: item.setTimes,
         groupClashVotes: item.groupClashVotes,
@@ -93,13 +96,14 @@ export const ComparisonView = ({
       ...imports.map((item, index) => ({
         id: `imported-${item.profileName}-${index}`,
         name: item.profileName,
+        accountUsername: item.accountUsername,
         intents: item.intents,
         setTimes: item.setTimes,
         groupClashVotes: item.groupClashVotes,
         groupCode: item.groupCode,
       })),
     ],
-    [groupClashVotes, groupCode, imports, intents, profileName, setTimes, syncedImports],
+    [accountUsername, groupClashVotes, groupCode, imports, intents, profileName, setTimes, syncedImports],
   );
 
   const combinedSetTimes = useMemo(
@@ -195,7 +199,15 @@ export const ComparisonView = ({
   };
 
   const handleExport = () => {
-    downloadJson(createExportPayload(profileName, intents, setTimes, personalClashDecisions, groupCode, groupClashVotes));
+    downloadJson(createExportPayload(
+      profileName,
+      intents,
+      setTimes,
+      personalClashDecisions,
+      groupCode,
+      groupClashVotes,
+      accountUsername,
+    ));
   };
 
   const handleGroupSync = () => {

@@ -1,4 +1,4 @@
-import type { ClashDecisionMap, FestivalExport, GroupClashVoteMap, Intent, IntentMap } from "../types";
+import type { AccountSession, ClashDecisionMap, FestivalExport, GroupClashVoteMap, Intent, IntentMap } from "../types";
 
 const storageKeys = {
   intents: "download-clash-finder:intents",
@@ -11,6 +11,7 @@ const storageKeys = {
   groupCode: "download-clash-finder:group-code",
   groupCodes: "download-clash-finder:group-codes",
   groupMemberId: "download-clash-finder:group-member-id",
+  accountSession: "download-clash-finder:account-session",
 };
 
 const parseJson = <T>(value: string | null, fallback: T): T => {
@@ -102,6 +103,18 @@ export const loadGroupCodes = (activeGroupCode = "") => {
 
 export const saveGroupCodes = (value: string[]) => {
   window.localStorage.setItem(storageKeys.groupCodes, JSON.stringify(Array.from(new Set(value.filter(Boolean)))));
+};
+
+export const loadAccountSession = (): AccountSession | null =>
+  parseJson<AccountSession | null>(window.localStorage.getItem(storageKeys.accountSession), null);
+
+export const saveAccountSession = (value: AccountSession | null) => {
+  if (!value) {
+    window.localStorage.removeItem(storageKeys.accountSession);
+    return;
+  }
+
+  window.localStorage.setItem(storageKeys.accountSession, JSON.stringify(value));
 };
 
 const createGroupMemberId = () => {

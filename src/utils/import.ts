@@ -69,6 +69,7 @@ export const parseFestivalExport = (
     clashDecisions: parseClashDecisions(parsed.clashDecisions),
     groupClashVotes: parseClashDecisions(parsed.groupClashVotes),
     groupCode: typeof parsed.groupCode === "string" ? parsed.groupCode.trim() : undefined,
+    accountUsername: typeof parsed.accountUsername === "string" ? parsed.accountUsername.trim() : undefined,
   };
 };
 

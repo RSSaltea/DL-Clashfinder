@@ -45,6 +45,7 @@ export type GroupClashVoteMap = Record<string, ClashDecisionMap>;
 export interface ProfilePlan {
   id: string;
   name: string;
+  accountUsername?: string;
   intents: IntentMap;
   setTimes: SetTimeMap;
   clashDecisions?: ClashDecisionMap;
@@ -65,6 +66,24 @@ export interface FestivalExport {
   clashDecisions?: ClashDecisionMap;
   groupClashVotes?: ClashDecisionMap;
   groupCode?: string;
+  accountUsername?: string;
+}
+
+export interface AccountSession {
+  userId: string;
+  username: string;
+  token: string;
+}
+
+export interface AccountPlan {
+  version: 1;
+  profileName: string;
+  intents: IntentMap;
+  imports: FestivalExport[];
+  clashDecisions: ClashDecisionMap;
+  groupClashVotesByCode: GroupClashVoteMap;
+  groupCode: string;
+  groupCodes: string[];
 }
 
 export interface ClashPair {
