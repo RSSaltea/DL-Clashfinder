@@ -275,6 +275,7 @@ export const ScheduleDayView = ({
       (_, index) => timelineStart + index * 60,
     );
     const visibleAttending = freeTimeOnly ? [] : schedule.attending;
+    const showFreeColumn = schedule.gaps.length > 0;
 
     const renderStagedGap = (gap: ScheduleGap) => {
       const top = (gap.start - timelineStart) * pixelsPerMinute;
@@ -302,15 +303,23 @@ export const ScheduleDayView = ({
 
     return (
       <div className="timetable-staged-outer">
-        <div className="timetable-staged-headers">
+        <div className={`timetable-staged-headers${showFreeColumn ? " has-free-column" : ""}`}>
           <div className="timetable-axis-spacer" />
           {festivalStages.map((stage) => (
             <div key={stage.id} className={`timetable-staged-col-header stage-${stage.id}`}>
               {stage.shortName}
             </div>
           ))}
+          {showFreeColumn && (
+            <div className="timetable-staged-col-header timetable-staged-col-header--free">
+              Free
+            </div>
+          )}
         </div>
-        <div className="timetable timetable--staged" style={{ height: `${timelineHeight}px` }}>
+        <div
+          className={`timetable timetable--staged${showFreeColumn ? " has-free-column" : ""}`}
+          style={{ height: `${timelineHeight}px` }}
+        >
           <div className="timetable-axis" aria-hidden="true">
             {ticks.map((tick) => {
               const top = (tick - timelineStart) * pixelsPerMinute;
@@ -360,8 +369,12 @@ export const ScheduleDayView = ({
               </div>
             );
           })}
-          {schedule.gaps.length > 0 && (
-            <div className="timetable-staged-free-layer">
+          {showFreeColumn && (
+            <div className="timetable-track timetable-track--free">
+              {ticks.map((tick) => {
+                const top = (tick - timelineStart) * pixelsPerMinute;
+                return <div className="timetable-line" key={tick} style={{ top: `${top}px` }} />;
+              })}
               {schedule.gaps.map(renderStagedGap)}
             </div>
           )}

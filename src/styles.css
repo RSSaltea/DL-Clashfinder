@@ -2516,6 +2516,11 @@ input.is-error {
 .timetable-staged-col-header.stage-avalanche { border-left-color: var(--teal); }
 .timetable-staged-col-header.stage-dogtooth { border-left-color: var(--blue); }
 
+.timetable-staged-col-header--free {
+  color: var(--teal);
+  border-left-color: var(--teal);
+}
+
 .timetable--staged {
   grid-template-columns: 4.5rem repeat(4, minmax(8rem, 1fr));
   gap: 0;
@@ -2523,23 +2528,15 @@ input.is-error {
   border: 0;
 }
 
+.timetable--staged.has-free-column {
+  grid-template-columns: 4.5rem repeat(4, minmax(8rem, 1fr)) minmax(8rem, 1fr);
+}
+
 .timetable--staged .timetable-track {
-  grid-row: 1;
   border-left: 1px solid var(--line);
 }
 
-.timetable-staged-free-layer {
-  position: relative;
-  z-index: 3;
-  grid-column: 2 / -1;
-  grid-row: 1;
-  height: 100%;
-  pointer-events: none;
-}
-
 .timetable-block--staged-gap {
-  left: 0.35rem;
-  right: 0.35rem;
   border-left-width: 5px;
   box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
 }
@@ -2585,6 +2582,10 @@ input.is-error {
     grid-template-columns: 3.2rem repeat(4, minmax(0, 1fr));
     width: 100%;
     min-width: 0;
+  }
+
+  .timetable--staged.has-free-column {
+    grid-template-columns: 3.2rem repeat(4, minmax(0, 1fr)) minmax(0, 1fr);
   }
 
   .timetable--staged .timetable-axis span {
