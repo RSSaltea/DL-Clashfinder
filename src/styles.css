@@ -2516,11 +2516,6 @@ input.is-error {
 .timetable-staged-col-header.stage-avalanche { border-left-color: var(--teal); }
 .timetable-staged-col-header.stage-dogtooth { border-left-color: var(--blue); }
 
-.timetable-staged-col-header--free {
-  color: var(--teal);
-  border-left-color: var(--teal);
-}
-
 .timetable--staged {
   grid-template-columns: 4.5rem repeat(4, minmax(8rem, 1fr));
   gap: 0;
@@ -2528,21 +2523,60 @@ input.is-error {
   border: 0;
 }
 
-.timetable--staged.has-free-column {
-  grid-template-columns: 4.5rem repeat(4, minmax(8rem, 1fr)) minmax(8rem, 1fr);
-}
-
 .timetable--staged .timetable-track {
   border-left: 1px solid var(--line);
 }
 
-.timetable-block--staged-gap {
-  border-left-width: 5px;
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
+.staged-free-row {
+  display: grid;
+  grid-template-columns: 4.5rem minmax(0, 1fr);
+  border-top: 1px solid var(--line);
+  background: rgba(40, 190, 179, 0.05);
 }
 
-.timetable-block--staged-gap .timetable-block__main {
-  align-content: center;
+.staged-free-row__label {
+  display: flex;
+  min-height: 4.25rem;
+  align-items: center;
+  justify-content: center;
+  border-right: 1px solid var(--line);
+  color: var(--teal);
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.staged-free-row__items {
+  display: flex;
+  gap: 0.55rem;
+  min-width: 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 0.65rem;
+}
+
+.staged-free-chip {
+  display: grid;
+  flex: 0 0 min(16rem, 78vw);
+  gap: 0.15rem;
+  min-width: 0;
+  border: 1px solid rgba(40, 190, 179, 0.28);
+  border-left: 4px solid var(--teal);
+  border-radius: 8px;
+  background: rgba(40, 190, 179, 0.08);
+  padding: 0.6rem 0.7rem;
+}
+
+.staged-free-chip strong {
+  color: var(--text);
+}
+
+.staged-free-chip span,
+.staged-free-chip em {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-style: normal;
 }
 
 [data-theme="light"] .timetable-staged-headers,
@@ -2584,10 +2618,6 @@ input.is-error {
     min-width: 0;
   }
 
-  .timetable--staged.has-free-column {
-    grid-template-columns: 3.2rem repeat(4, minmax(0, 1fr)) minmax(0, 1fr);
-  }
-
   .timetable--staged .timetable-axis span {
     right: 0.4rem;
     font-size: 0.68rem;
@@ -2608,6 +2638,23 @@ input.is-error {
   .timetable--staged .timetable-block span,
   .timetable--staged .timetable-block em {
     font-size: 0.68rem;
+  }
+
+  .staged-free-row {
+    grid-template-columns: 3.2rem minmax(0, 1fr);
+  }
+
+  .staged-free-row__label {
+    min-height: 4rem;
+    font-size: 0.62rem;
+  }
+
+  .staged-free-row__items {
+    padding: 0.55rem;
+  }
+
+  .staged-free-chip {
+    flex-basis: min(14rem, 78vw);
   }
 }
 

@@ -275,51 +275,42 @@ export const ScheduleDayView = ({
       (_, index) => timelineStart + index * 60,
     );
     const visibleAttending = freeTimeOnly ? [] : schedule.attending;
-    const showFreeColumn = schedule.gaps.length > 0;
 
-    const renderStagedGap = (gap: ScheduleGap) => {
-      const top = (gap.start - timelineStart) * pixelsPerMinute;
-      const duration = gap.end - gap.start;
-      const height = Math.max(duration * pixelsPerMinute - 2, 12);
-      const compactClass = duration < 20
-        ? " timetable-block--tiny"
-        : duration < 35
-          ? " timetable-block--short"
-          : "";
-
-      return (
-        <article
-          className={`timetable-block timetable-block--gap timetable-block--staged-gap${compactClass}`}
-          key={`staged-gap-${schedule.dayId}-${gap.start}-${gap.end}`}
-          style={{ top: `${top}px`, height: `${height}px` }}
-        >
-          <div className="timetable-block__main">
-            <strong>{formatDuration(duration)} free</strong>
-            <span>{formatRange(gap.start, gap.end)}</span>
+    const renderStagedFreeRow = () =>
+      schedule.gaps.length > 0 ? (
+        <div className="staged-free-row">
+          <div className="staged-free-row__label">Free</div>
+          <div className="staged-free-row__items">
+            {schedule.gaps.map((gap) => (
+              <article className="staged-free-chip" key={`staged-gap-${schedule.dayId}-${gap.start}-${gap.end}`}>
+                <strong>{formatDuration(gap.end - gap.start)} free</strong>
+                <span>{formatRange(gap.start, gap.end)}</span>
+                {getStageTransferText(gap) && <em>{getStageTransferText(gap)}</em>}
+              </article>
+            ))}
           </div>
-        </article>
+        </div>
+      ) : null;
+
+    if (freeTimeOnly) {
+      return renderStagedFreeRow() ?? (
+        <div className="empty-state tight">
+          <p className="muted">No free time gaps on this day â€” picks are back to back!</p>
+        </div>
       );
-    };
+    }
 
     return (
       <div className="timetable-staged-outer">
-        <div className={`timetable-staged-headers${showFreeColumn ? " has-free-column" : ""}`}>
+        <div className="timetable-staged-headers">
           <div className="timetable-axis-spacer" />
           {festivalStages.map((stage) => (
             <div key={stage.id} className={`timetable-staged-col-header stage-${stage.id}`}>
               {stage.shortName}
             </div>
           ))}
-          {showFreeColumn && (
-            <div className="timetable-staged-col-header timetable-staged-col-header--free">
-              Free
-            </div>
-          )}
         </div>
-        <div
-          className={`timetable timetable--staged${showFreeColumn ? " has-free-column" : ""}`}
-          style={{ height: `${timelineHeight}px` }}
-        >
+        <div className="timetable timetable--staged" style={{ height: `${timelineHeight}px` }}>
           <div className="timetable-axis" aria-hidden="true">
             {ticks.map((tick) => {
               const top = (tick - timelineStart) * pixelsPerMinute;
@@ -369,16 +360,8 @@ export const ScheduleDayView = ({
               </div>
             );
           })}
-          {showFreeColumn && (
-            <div className="timetable-track timetable-track--free">
-              {ticks.map((tick) => {
-                const top = (tick - timelineStart) * pixelsPerMinute;
-                return <div className="timetable-line" key={tick} style={{ top: `${top}px` }} />;
-              })}
-              {schedule.gaps.map(renderStagedGap)}
-            </div>
-          )}
         </div>
+        {renderStagedFreeRow()}
       </div>
     );
   };
