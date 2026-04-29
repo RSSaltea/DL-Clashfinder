@@ -307,7 +307,7 @@ export const ScheduleDayView = ({
     if (freeTimeOnly) {
       return renderStagedFreeRow() ?? (
         <div className="empty-state tight">
-          <p className="muted">No free time gaps on this day â€” picks are back to back!</p>
+          <p className="muted">No free time gaps on this day - picks are back to back!</p>
         </div>
       );
     }
