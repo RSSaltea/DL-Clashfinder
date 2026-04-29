@@ -7,13 +7,6 @@ type ScheduleSegment =
   | { type: "set"; key: string; start: number; item: TimedArtist }
   | { type: "gap"; key: string; start: number; item: ScheduleGap };
 
-interface TimetableTransferNote {
-  key: string;
-  start: number;
-  text: string;
-  urgent?: boolean;
-}
-
 interface ScheduleDayViewProps {
   schedule: ScheduleDay;
   showSupporters?: boolean;
@@ -36,6 +29,13 @@ export const ScheduleDayView = ({ schedule, showSupporters = false, viewMode = "
   const directTransfers = getDirectStageTransfers(schedule.attending);
   const directTransferByDestination = new Map(
     directTransfers.map((transfer) => [transfer.to.artist.id, transfer]),
+  );
+  const gapTransferByDestination = new Map(
+    schedule.gaps.flatMap((gap) => {
+      const text = getStageTransferText(gap);
+
+      return text && gap.goingTo ? [[gap.goingTo.artist.id, text] as const] : [];
+    }),
   );
   const segments: ScheduleSegment[] = [
     ...schedule.attending.map((item) => ({
@@ -123,25 +123,6 @@ export const ScheduleDayView = ({ schedule, showSupporters = false, viewMode = "
       { length: Math.floor(timelineDuration / 60) + 1 },
       (_, index) => timelineStart + index * 60,
     );
-    const transferNotes: TimetableTransferNote[] = [
-      ...schedule.gaps.flatMap((gap) => {
-        const text = getStageTransferText(gap);
-
-        return text
-          ? [{
-              key: `gap-transfer-${schedule.dayId}-${gap.start}-${gap.end}`,
-              start: gap.start,
-              text,
-            }]
-          : [];
-      }),
-      ...directTransfers.map((transfer) => ({
-        key: `direct-transfer-${transfer.id}`,
-        start: transfer.to.start,
-        text: transfer.text,
-        urgent: true,
-      })),
-    ];
 
     return (
       <div
@@ -180,6 +161,8 @@ export const ScheduleDayView = ({ schedule, showSupporters = false, viewMode = "
             if (segment.type === "set") {
               const item = segment.item;
               const supporters = getSupportText(item.supporters);
+              const directTransfer = directTransferByDestination.get(item.artist.id);
+              const transferText = directTransfer?.text ?? gapTransferByDestination.get(item.artist.id) ?? "";
 
               return (
                 <article
@@ -187,9 +170,18 @@ export const ScheduleDayView = ({ schedule, showSupporters = false, viewMode = "
                   key={segment.key}
                   style={{ top: `${top}px`, height: `${height}px` }}
                 >
-                  <strong>{item.artist.name}</strong>
-                  <span>{formatRange(item.start, item.end)} - {getStageLabel(item.artist)}</span>
-                  {showSupporters && supporters && <em>Picked by {supporters}</em>}
+                  <div className="timetable-block__main">
+                    <strong>{item.artist.name}</strong>
+                    <span>{formatRange(item.start, item.end)} - {getStageLabel(item.artist)}</span>
+                    {showSupporters && supporters && <em>Picked by {supporters}</em>}
+                  </div>
+                  {transferText && (
+                    <p
+                      className={`transfer-note timetable-block__transfer${directTransfer ? " transfer-note--urgent" : ""}`}
+                    >
+                      {transferText}
+                    </p>
+                  )}
                 </article>
               );
             }
@@ -202,22 +194,11 @@ export const ScheduleDayView = ({ schedule, showSupporters = false, viewMode = "
                 key={segment.key}
                 style={{ top: `${top}px`, height: `${height}px` }}
               >
-                <strong>{formatDuration(gap.end - gap.start)} free</strong>
-                <span>{formatRange(gap.start, gap.end)}</span>
+                <div className="timetable-block__main">
+                  <strong>{formatDuration(gap.end - gap.start)} free</strong>
+                  <span>{formatRange(gap.start, gap.end)}</span>
+                </div>
               </article>
-            );
-          })}
-          {transferNotes.map((note) => {
-            const top = (note.start - timelineStart) * pixelsPerMinute;
-
-            return (
-              <p
-                className={`transfer-note timetable-transfer-note${note.urgent ? " transfer-note--urgent" : ""}`}
-                key={note.key}
-                style={{ top: `${Math.max(4, top + 6)}px` }}
-              >
-                {note.text}
-              </p>
             );
           })}
         </div>

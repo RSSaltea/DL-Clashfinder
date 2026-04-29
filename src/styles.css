@@ -1255,9 +1255,10 @@ p {
   position: absolute;
   left: 0;
   right: 0;
-  display: grid;
-  align-content: start;
-  gap: 0.15rem;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-left-width: 5px;
@@ -1266,13 +1267,29 @@ p {
   padding: 0.55rem 0.65rem;
 }
 
+.timetable-block__main {
+  display: grid;
+  flex: 1 1 auto;
+  min-width: 0;
+  gap: 0.15rem;
+}
+
+.timetable-block__transfer {
+  flex: 0 1 min(31rem, 48%);
+  justify-self: end;
+  max-width: min(31rem, 48%);
+  margin-top: 0;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
+  text-align: right;
+}
+
 .timetable-block--short {
   gap: 0;
   padding-block: 0.4rem;
 }
 
 .timetable-block--tiny {
-  align-content: center;
+  align-items: center;
   gap: 0;
   padding-block: 0.15rem;
 }
@@ -1285,6 +1302,15 @@ p {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.timetable-block .timetable-block__transfer {
+  display: -webkit-box;
+  overflow: hidden;
+  text-overflow: clip;
+  white-space: normal;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .timetable-block span,
@@ -1303,17 +1329,6 @@ p {
 .timetable-block--gap {
   border-left-color: var(--teal);
   background: rgba(40, 190, 179, 0.08);
-}
-
-.timetable-transfer-note {
-  position: absolute;
-  right: 0.65rem;
-  z-index: 4;
-  max-width: min(30rem, calc(100% - 1.3rem));
-  margin-top: 0;
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
-  text-align: right;
-  pointer-events: none;
 }
 
 .app-footer {
