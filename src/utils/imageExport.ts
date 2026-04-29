@@ -4,18 +4,46 @@ export const downloadElementAsPng = async (element: HTMLElement, filename: strin
   const bgColor =
     document.documentElement.getAttribute("data-theme") === "light" ? "#f4f0e8" : "#08090a";
 
-  // Temporarily expand overflow containers so html-to-image captures full content
-  const restored: Array<{ el: HTMLElement; overflow: string; width: string; maxWidth: string }> = [];
-  for (const selector of [".tt-outer", ".tt-scroll", ".timetable-staged-outer"]) {
+  // Temporarily expand overflow containers so html-to-image captures full timelines,
+  // even if the user has scrolled a horizontal timetable on screen.
+  const restored: Array<{
+    el: HTMLElement;
+    overflow: string;
+    overflowX: string;
+    overflowY: string;
+    width: string;
+    maxWidth: string;
+    scrollLeft: number;
+    scrollTop: number;
+  }> = [];
+
+  for (const selector of [".tt-scroll", ".timetable-staged-outer", ".tt-outer"]) {
     element.querySelectorAll<HTMLElement>(selector).forEach((el) => {
-      restored.push({ el, overflow: el.style.overflow, width: el.style.width, maxWidth: el.style.maxWidth });
+      restored.push({
+        el,
+        overflow: el.style.overflow,
+        overflowX: el.style.overflowX,
+        overflowY: el.style.overflowY,
+        width: el.style.width,
+        maxWidth: el.style.maxWidth,
+        scrollLeft: el.scrollLeft,
+        scrollTop: el.scrollTop,
+      });
+      el.scrollLeft = 0;
+      el.scrollTop = 0;
       el.style.overflow = "visible";
+      el.style.overflowX = "visible";
+      el.style.overflowY = "visible";
       el.style.maxWidth = "none";
-      if (el.scrollWidth > el.clientWidth) {
-        el.style.width = `${el.scrollWidth}px`;
-      }
+      el.style.width = `${Math.max(el.scrollWidth, el.clientWidth)}px`;
     });
   }
+
+  element.querySelectorAll<HTMLElement>(".tt-outer").forEach((outer) => {
+    const widestChild = Array.from(outer.querySelectorAll<HTMLElement>(".tt-scroll, .tt-axis, .tt-track"))
+      .reduce((width, child) => Math.max(width, child.scrollWidth, child.offsetWidth), outer.scrollWidth);
+    outer.style.width = `${Math.max(outer.scrollWidth, widestChild)}px`;
+  });
 
   const captureWidth = element.scrollWidth;
   const captureHeight = element.scrollHeight;
@@ -37,10 +65,14 @@ export const downloadElementAsPng = async (element: HTMLElement, filename: strin
     anchor.click();
     anchor.remove();
   } finally {
-    restored.forEach(({ el, overflow, width, maxWidth }) => {
+    restored.forEach(({ el, overflow, overflowX, overflowY, width, maxWidth, scrollLeft, scrollTop }) => {
       el.style.overflow = overflow;
+      el.style.overflowX = overflowX;
+      el.style.overflowY = overflowY;
       el.style.width = width;
       el.style.maxWidth = maxWidth;
+      el.scrollLeft = scrollLeft;
+      el.scrollTop = scrollTop;
     });
   }
 };
