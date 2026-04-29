@@ -1,4 +1,4 @@
-import { CalendarDays, Download, Layers, List, StretchHorizontal } from "lucide-react";
+import { CalendarDays, Download, Layers, List, StretchHorizontal, Timer } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 import { ScheduleDayView } from "../components/ScheduleDayView";
 import { TimetableView } from "../components/TimetableView";
@@ -38,6 +38,7 @@ export const GroupItinerary = ({
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [dayFilter, setDayFilter] = useState<ItineraryDayFilter>("all");
   const [showStages, setShowStages] = useState(() => loadTimetableStages());
+  const [freeTimeOnly, setFreeTimeOnly] = useState(false);
   const [exportState, setExportState] = useState<"idle" | "saving" | "error">("idle");
   const exportRef = useRef<HTMLDivElement>(null);
   const freeTimeWindow = useMemo(() => loadFreeTimeWindow(), []);
@@ -171,7 +172,7 @@ export const GroupItinerary = ({
               <StretchHorizontal size={16} />
               <span>Horizontal</span>
             </button>
-            {viewMode === "horizontal" && (
+            {(viewMode === "vertical" || viewMode === "horizontal") && (
               <button
                 type="button"
                 className={`secondary-button${showStages ? " is-active" : ""}`}
@@ -181,6 +182,14 @@ export const GroupItinerary = ({
                 <span>Stages</span>
               </button>
             )}
+            <button
+              type="button"
+              className={`secondary-button${freeTimeOnly ? " is-active" : ""}`}
+              onClick={() => setFreeTimeOnly((v) => !v)}
+            >
+              <Timer size={16} />
+              <span>Free Time</span>
+            </button>
           </div>
         </div>
       </section>
@@ -235,6 +244,7 @@ export const GroupItinerary = ({
                   setTimes={combinedSetTimes}
                   showStages={showStages}
                   hideUnpicked
+                  freeTimeOnly={freeTimeOnly}
                 />
               </div>
             ))
@@ -244,6 +254,8 @@ export const GroupItinerary = ({
                 schedule={schedule}
                 showSupporters
                 viewMode={viewMode === "vertical" ? "timetable" : "list"}
+                showStages={showStages}
+                freeTimeOnly={freeTimeOnly}
               />
             ))}
       </div>

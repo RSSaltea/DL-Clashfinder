@@ -2033,6 +2033,11 @@ input.is-error {
   letter-spacing: 0.04em;
 }
 
+.tt-stage-label--free {
+  color: var(--teal);
+  border-left: 3px solid var(--teal);
+}
+
 .tt-track {
   position: relative;
   flex-shrink: 0;
@@ -2272,4 +2277,69 @@ input.is-error {
   padding: 0.35rem 0.6rem;
   min-height: 0;
   gap: 0.3rem;
+}
+
+/* ── Staged vertical timetable ── */
+.timetable-staged-outer {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+}
+
+.timetable-staged-headers {
+  display: flex;
+  position: sticky;
+  top: 4.5rem;
+  z-index: 6;
+  background: var(--panel);
+  border-bottom: 2px solid var(--line);
+}
+
+.timetable-axis-spacer {
+  width: 4.5rem;
+  flex-shrink: 0;
+  border-right: 1px solid var(--line);
+}
+
+.timetable-staged-col-header {
+  flex: 1;
+  min-width: 8rem;
+  text-align: center;
+  padding: 0.5rem 0.4rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-left: 3px solid var(--line);
+}
+
+.timetable-staged-col-header.stage-apex { border-left-color: var(--red); }
+.timetable-staged-col-header.stage-opus { border-left-color: var(--amber); }
+.timetable-staged-col-header.stage-avalanche { border-left-color: var(--teal); }
+.timetable-staged-col-header.stage-dogtooth { border-left-color: var(--blue); }
+
+.timetable--staged {
+  grid-template-columns: 4.5rem repeat(4, minmax(8rem, 1fr));
+  gap: 0;
+  border-radius: 0;
+  border: 0;
+}
+
+.timetable--staged .timetable-track {
+  border-left: 1px solid var(--line);
+}
+
+[data-theme="light"] .timetable-staged-headers,
+[data-theme="light"] .timetable-axis-spacer {
+  background: var(--panel);
+}
+
+@media (max-width: 480px) {
+  .timetable-axis-spacer {
+    width: 3.6rem;
+  }
+  .timetable--staged {
+    grid-template-columns: 3.6rem repeat(4, minmax(8rem, 1fr));
+  }
 }

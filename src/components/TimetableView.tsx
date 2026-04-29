@@ -12,7 +12,6 @@ function toFestivalMins(artist: Artist, setTimes: SetTimeMap): { start: number; 
   const t = getEffectiveTime(artist, setTimes);
   const start = timeToMinutes(t.start) ?? 10 * 60;
   const rawEnd = timeToMinutes(t.end);
-  // handle post-midnight wrap (e.g. end "00:30" = 30 mins, but start is 23:xx)
   let end: number = rawEnd !== null && rawEnd !== undefined ? rawEnd : start + 60;
   if (end <= start) end += 1440;
   return { start, end };
@@ -23,11 +22,22 @@ interface TimetableViewProps {
   intents: IntentMap;
   setTimes: SetTimeMap;
   showStages: boolean;
-  hideUnpicked?: boolean; // itinerary pages: skip artists with no intent
+  hideUnpicked?: boolean;
+  freeTimeOnly?: boolean;
 }
 
-export const TimetableView = ({ day, intents, setTimes, showStages, hideUnpicked = false }: TimetableViewProps) => {
+export const TimetableView = ({
+  day,
+  intents,
+  setTimes,
+  showStages,
+  hideUnpicked = false,
+  freeTimeOnly = false,
+}: TimetableViewProps) => {
   const dayArtists = useMemo(() => lineup.filter((a) => a.day === day), [day]);
+
+  // When freeTimeOnly, force single-lane so gaps are visible
+  const effectiveShowStages = showStages && !freeTimeOnly;
 
   const { rangeStart, rangeEnd } = useMemo(() => {
     let s = 10 * 60;
@@ -57,17 +67,49 @@ export const TimetableView = ({ day, intents, setTimes, showStages, hideUnpicked
 
   const minsToX = (m: number) => ((m - rangeStart) / 60) * HOUR_W;
   const timeW = minsToX(rangeEnd);
-
   const hLabel = (m: number) => `${String(Math.floor(m / 60) % 24).padStart(2, "0")}:00`;
 
-  // Single-lane mode: only picked artists + free time gaps
+  // Picked artists sorted by start time (for single-lane and FREE row)
   const pickedSorted = useMemo(() => {
-    if (showStages) return [];
     return dayArtists
       .filter((a) => intents[a.id])
       .map((a) => ({ artist: a, ...toFestivalMins(a, setTimes) }))
       .sort((a, b) => a.start - b.start);
-  }, [dayArtists, intents, setTimes, showStages]);
+  }, [dayArtists, intents, setTimes]);
+
+  // Gaps between consecutive picks (used in single-lane and FREE row)
+  const pickedGaps = useMemo(() => {
+    const gaps: { start: number; end: number }[] = [];
+    for (let i = 0; i < pickedSorted.length - 1; i++) {
+      const curr = pickedSorted[i];
+      const next = pickedSorted[i + 1];
+      if (next.start > curr.end) {
+        gaps.push({ start: curr.end, end: next.start });
+      }
+    }
+    return gaps;
+  }, [pickedSorted]);
+
+  // Merged free-time blocks across all stages (for FREE row in stages mode)
+  const stagesFreeTime = useMemo(() => {
+    if (!effectiveShowStages || !hideUnpicked) return [];
+    if (pickedSorted.length === 0) return [];
+    const merged: { start: number; end: number }[] = [];
+    for (const { start, end } of pickedSorted) {
+      if (merged.length > 0 && start <= merged[merged.length - 1].end) {
+        merged[merged.length - 1].end = Math.max(merged[merged.length - 1].end, end);
+      } else {
+        merged.push({ start, end });
+      }
+    }
+    const gaps: { start: number; end: number }[] = [];
+    for (let i = 0; i < merged.length - 1; i++) {
+      if (merged[i + 1].start > merged[i].end) {
+        gaps.push({ start: merged[i].end, end: merged[i + 1].start });
+      }
+    }
+    return gaps;
+  }, [effectiveShowStages, hideUnpicked, pickedSorted]);
 
   const renderBlock = (artist: Artist) => {
     const { start, end } = toFestivalMins(artist, setTimes);
@@ -93,6 +135,20 @@ export const TimetableView = ({ day, intents, setTimes, showStages, hideUnpicked
     );
   };
 
+  const renderGapBlock = (gap: { start: number; end: number }, key: string) => {
+    const left = minsToX(gap.start);
+    const gW = minsToX(gap.end) - left;
+    const gMins = gap.end - gap.start;
+    const hrs = Math.floor(gMins / 60);
+    const mins = gMins % 60;
+    const label = [hrs > 0 && `${hrs}h`, mins > 0 && `${mins}m`].filter(Boolean).join(" ") + " free";
+    return (
+      <div key={key} className="tt-gap" style={{ left, width: gW - 2 }} title={label}>
+        {gW > 55 && <span>{label}</span>}
+      </div>
+    );
+  };
+
   const renderGridLines = () => (
     <>
       {quarterMarks.map((m) => (
@@ -109,7 +165,7 @@ export const TimetableView = ({ day, intents, setTimes, showStages, hideUnpicked
       <div className="tt-scroll">
         {/* Time axis header */}
         <div className="tt-header">
-          {showStages && <div className="tt-corner" style={{ width: LABEL_W }} />}
+          {effectiveShowStages && <div className="tt-corner" style={{ width: LABEL_W }} />}
           <div className="tt-axis" style={{ width: timeW }}>
             {hours.map((m) => (
               <span key={m} className="tt-hour-label" style={{ left: minsToX(m) }}>
@@ -125,31 +181,56 @@ export const TimetableView = ({ day, intents, setTimes, showStages, hideUnpicked
         </div>
 
         {/* Rows */}
-        {showStages ? (
-          festivalStages.map((stage) => {
-            const artists = dayArtists.filter((a) => a.stage === stage.id);
-            const visibleArtists = hideUnpicked ? artists.filter((a) => intents[a.id]) : artists;
-            if (hideUnpicked && visibleArtists.length === 0) return null;
-            return (
-              <div key={stage.id} className="tt-row">
+        {effectiveShowStages ? (
+          <>
+            {festivalStages.map((stage) => {
+              const artists = dayArtists.filter((a) => a.stage === stage.id);
+              const visibleArtists = hideUnpicked ? artists.filter((a) => intents[a.id]) : artists;
+              if (hideUnpicked && visibleArtists.length === 0) return null;
+              return (
+                <div key={stage.id} className="tt-row">
+                  <div
+                    className={`tt-stage-label stage-${stage.id}`}
+                    style={{ width: LABEL_W, minWidth: LABEL_W }}
+                  >
+                    {stage.shortName}
+                  </div>
+                  <div className="tt-track" style={{ width: timeW, height: ROW_H }}>
+                    {renderGridLines()}
+                    {artists.map(renderBlock)}
+                  </div>
+                </div>
+              );
+            })}
+            {/* FREE row — gaps between any picks across all stages */}
+            {stagesFreeTime.length > 0 && (
+              <div className="tt-row">
                 <div
-                  className={`tt-stage-label stage-${stage.id}`}
+                  className="tt-stage-label tt-stage-label--free"
                   style={{ width: LABEL_W, minWidth: LABEL_W }}
                 >
-                  {stage.shortName}
+                  FREE
                 </div>
                 <div className="tt-track" style={{ width: timeW, height: ROW_H }}>
                   {renderGridLines()}
-                  {artists.map(renderBlock)}
+                  {stagesFreeTime.map((gap, i) => renderGapBlock(gap, `free-${i}`))}
                 </div>
               </div>
-            );
-          })
+            )}
+          </>
         ) : (
           <div className="tt-row tt-row--solo">
             <div className="tt-track" style={{ width: timeW, height: ROW_H }}>
               {renderGridLines()}
-              {pickedSorted.length === 0 ? (
+              {freeTimeOnly ? (
+                pickedGaps.length === 0 ? (
+                  <p className="tt-hint">
+                    {pickedSorted.length === 0 ? "Pick artists to see free time." : "No free time — picks are back to back!"}
+                  </p>
+                ) : (
+                  pickedGaps.map((gap, i) => renderGapBlock(gap, `gap-ft-${i}`))
+                )
+              ) : pickedSorted.length === 0 ? (
                 <p className="tt-hint">Pick artists on the lineup to see your personal timeline.</p>
               ) : (
                 <>
@@ -174,29 +255,7 @@ export const TimetableView = ({ day, intents, setTimes, showStages, hideUnpicked
                       </Link>
                     );
                   })}
-                  {/* Free time gaps between picks */}
-                  {pickedSorted.slice(0, -1).map((curr, i) => {
-                    const next = pickedSorted[i + 1];
-                    if (next.start <= curr.end) return null;
-                    const gLeft = minsToX(curr.end);
-                    const gW = minsToX(next.start) - gLeft;
-                    const gMins = next.start - curr.end;
-                    const hrs = Math.floor(gMins / 60);
-                    const mins = gMins % 60;
-                    const label = [hrs > 0 && `${hrs}h`, mins > 0 && `${mins}m`]
-                      .filter(Boolean)
-                      .join(" ") + " free";
-                    return (
-                      <div
-                        key={`gap-${i}`}
-                        className="tt-gap"
-                        style={{ left: gLeft, width: gW }}
-                        title={label}
-                      >
-                        {gW > 55 && <span>{label}</span>}
-                      </div>
-                    );
-                  })}
+                  {pickedGaps.map((gap, i) => renderGapBlock(gap, `gap-${i}`))}
                 </>
               )}
             </div>
