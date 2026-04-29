@@ -1,5 +1,6 @@
 import { LogIn, LogOut, UserRound, X } from "lucide-react";
 import { useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import type { AccountSession } from "../types";
 import type { ResetAnswer } from "../utils/accountSync";
 import { resetQuestions } from "../utils/accountSync";
@@ -133,6 +134,155 @@ export const AuthDialog = ({
       await onResetPassword(username, selectedAnswers, newPassword);
     });
 
+  const modal = open ? (
+    <div className="modal-backdrop" role="presentation">
+      <section className="auth-modal" role="dialog" aria-modal="true" aria-label="Account">
+        <button className="icon-button auth-close" type="button" onClick={() => setOpen(false)} aria-label="Close">
+          <X size={18} />
+        </button>
+
+        {account ? (
+          <>
+            <p className="eyebrow">Account</p>
+            <h2>Signed in as {account.username}</h2>
+            <p className="muted">Your picks, group codes and clash votes sync to this account.</p>
+            <button
+              className="secondary-button fit-content"
+              type="button"
+              onClick={() => {
+                onLogout();
+                setOpen(false);
+              }}
+            >
+              <LogOut size={18} />
+              Log out
+            </button>
+          </>
+        ) : (
+          <>
+            <p className="eyebrow">Account sync</p>
+            <h2>{mode === "register" ? "Create account" : mode === "reset" ? "Reset password" : "Log in"}</h2>
+
+            {!configured && (
+              <p className="error-banner">Account tables are not ready in Supabase yet. Run the SQL file first.</p>
+            )}
+
+            {message && <p className="error-banner">{message}</p>}
+
+            <div className="auth-tabs">
+              <button type="button" className={mode === "login" ? "is-active" : ""} onClick={() => switchMode("login")}>
+                Login
+              </button>
+              <button type="button" className={mode === "register" ? "is-active" : ""} onClick={() => switchMode("register")}>
+                Register
+              </button>
+              <button type="button" className={mode === "reset" ? "is-active" : ""} onClick={() => switchMode("reset")}>
+                Reset
+              </button>
+            </div>
+
+            <label className="form-field">
+              Username
+              <input value={username} onChange={(event) => setUsername(event.target.value)} />
+            </label>
+
+            {mode === "login" && (
+              <>
+                <label className="form-field">
+                  Password
+                  <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} />
+                </label>
+                <button className="primary-button" type="button" disabled={!configured || busy} onClick={submitLogin}>
+                  <LogIn size={18} />
+                  {busy ? "Logging in..." : "Login"}
+                </button>
+              </>
+            )}
+
+            {mode === "register" && (
+              <>
+                <label className="form-field">
+                  Compare display name
+                  <input value={registerName} onChange={(event) => setRegisterName(event.target.value)} />
+                </label>
+                <label className="form-field">
+                  Password
+                  <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} />
+                </label>
+                <label className="form-field">
+                  Confirm password
+                  <input
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(event) => setConfirmPassword(event.target.value)}
+                  />
+                </label>
+
+                <div className="reset-question-list">
+                  {resetQuestions.map((question) => (
+                    <label className="reset-question" key={question.id}>
+                      <span>{question.label}</span>
+                      <input
+                        placeholder="Answer"
+                        value={answers[question.id] ?? ""}
+                        onChange={(event) => setAnswers((current) => ({
+                          ...current,
+                          [question.id]: event.target.value,
+                        }))}
+                      />
+                    </label>
+                  ))}
+                </div>
+
+                <button className="primary-button" type="button" disabled={!configured || busy} onClick={submitRegister}>
+                  {busy ? "Creating..." : "Create account"}
+                </button>
+              </>
+            )}
+
+            {mode === "reset" && (
+              <>
+                <button className="secondary-button fit-content" type="button" disabled={!configured || busy} onClick={loadResetQuestions}>
+                  Load reset questions
+                </button>
+                {resetQuestionIds.length > 0 && (
+                  <>
+                    <div className="reset-question-list">
+                      {resetQuestionIds.map((questionId) => (
+                        <label className="reset-question" key={questionId}>
+                          <span>{getQuestionLabel(questionId)}</span>
+                          <input
+                            placeholder="Answer"
+                            value={answers[questionId] ?? ""}
+                            onChange={(event) => setAnswers((current) => ({
+                              ...current,
+                              [questionId]: event.target.value,
+                            }))}
+                          />
+                        </label>
+                      ))}
+                    </div>
+                    <label className="form-field">
+                      New password
+                      <input
+                        type="password"
+                        value={newPassword}
+                        onChange={(event) => setNewPassword(event.target.value)}
+                      />
+                    </label>
+                    <button className="primary-button" type="button" disabled={busy} onClick={submitReset}>
+                      {busy ? "Resetting..." : "Reset password"}
+                    </button>
+                  </>
+                )}
+              </>
+            )}
+          </>
+        )}
+      </section>
+    </div>
+  ) : null;
+
   return (
     <>
       <button className="secondary-button account-button" type="button" onClick={() => setOpen(true)}>
@@ -140,154 +290,7 @@ export const AuthDialog = ({
         {account ? account.username : "Login"}
       </button>
 
-      {open && (
-        <div className="modal-backdrop" role="presentation">
-          <section className="auth-modal" role="dialog" aria-modal="true" aria-label="Account">
-            <button className="icon-button auth-close" type="button" onClick={() => setOpen(false)} aria-label="Close">
-              <X size={18} />
-            </button>
-
-            {account ? (
-              <>
-                <p className="eyebrow">Account</p>
-                <h2>Signed in as {account.username}</h2>
-                <p className="muted">Your picks, group codes and clash votes sync to this account.</p>
-                <button
-                  className="secondary-button fit-content"
-                  type="button"
-                  onClick={() => {
-                    onLogout();
-                    setOpen(false);
-                  }}
-                >
-                  <LogOut size={18} />
-                  Log out
-                </button>
-              </>
-            ) : (
-              <>
-                <p className="eyebrow">Account sync</p>
-                <h2>{mode === "register" ? "Create account" : mode === "reset" ? "Reset password" : "Log in"}</h2>
-
-                {!configured && (
-                  <p className="error-banner">Account tables are not ready in Supabase yet. Run the SQL file first.</p>
-                )}
-
-                {message && <p className="error-banner">{message}</p>}
-
-                <div className="auth-tabs">
-                  <button type="button" className={mode === "login" ? "is-active" : ""} onClick={() => switchMode("login")}>
-                    Login
-                  </button>
-                  <button type="button" className={mode === "register" ? "is-active" : ""} onClick={() => switchMode("register")}>
-                    Register
-                  </button>
-                  <button type="button" className={mode === "reset" ? "is-active" : ""} onClick={() => switchMode("reset")}>
-                    Reset
-                  </button>
-                </div>
-
-                <label className="form-field">
-                  Username
-                  <input value={username} onChange={(event) => setUsername(event.target.value)} />
-                </label>
-
-                {mode === "login" && (
-                  <>
-                    <label className="form-field">
-                      Password
-                      <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} />
-                    </label>
-                    <button className="primary-button" type="button" disabled={!configured || busy} onClick={submitLogin}>
-                      <LogIn size={18} />
-                      {busy ? "Logging in..." : "Login"}
-                    </button>
-                  </>
-                )}
-
-                {mode === "register" && (
-                  <>
-                    <label className="form-field">
-                      Compare display name
-                      <input value={registerName} onChange={(event) => setRegisterName(event.target.value)} />
-                    </label>
-                    <label className="form-field">
-                      Password
-                      <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} />
-                    </label>
-                    <label className="form-field">
-                      Confirm password
-                      <input
-                        type="password"
-                        value={confirmPassword}
-                        onChange={(event) => setConfirmPassword(event.target.value)}
-                      />
-                    </label>
-
-                    <div className="reset-question-list">
-                      {resetQuestions.map((question) => (
-                        <label className="reset-question" key={question.id}>
-                          <span>{question.label}</span>
-                          <input
-                            placeholder="Answer"
-                            value={answers[question.id] ?? ""}
-                            onChange={(event) => setAnswers((current) => ({
-                              ...current,
-                              [question.id]: event.target.value,
-                            }))}
-                          />
-                        </label>
-                      ))}
-                    </div>
-
-                    <button className="primary-button" type="button" disabled={!configured || busy} onClick={submitRegister}>
-                      {busy ? "Creating..." : "Create account"}
-                    </button>
-                  </>
-                )}
-
-                {mode === "reset" && (
-                  <>
-                    <button className="secondary-button fit-content" type="button" disabled={!configured || busy} onClick={loadResetQuestions}>
-                      Load reset questions
-                    </button>
-                    {resetQuestionIds.length > 0 && (
-                      <>
-                        <div className="reset-question-list">
-                          {resetQuestionIds.map((questionId) => (
-                            <label className="reset-question" key={questionId}>
-                              <span>{getQuestionLabel(questionId)}</span>
-                              <input
-                                placeholder="Answer"
-                                value={answers[questionId] ?? ""}
-                                onChange={(event) => setAnswers((current) => ({
-                                  ...current,
-                                  [questionId]: event.target.value,
-                                }))}
-                              />
-                            </label>
-                          ))}
-                        </div>
-                        <label className="form-field">
-                          New password
-                          <input
-                            type="password"
-                            value={newPassword}
-                            onChange={(event) => setNewPassword(event.target.value)}
-                          />
-                        </label>
-                        <button className="primary-button" type="button" disabled={busy} onClick={submitReset}>
-                          {busy ? "Resetting..." : "Reset password"}
-                        </button>
-                      </>
-                    )}
-                  </>
-                )}
-              </>
-            )}
-          </section>
-        </div>
-      )}
+      {modal ? createPortal(modal, document.body) : null}
     </>
   );
 };
