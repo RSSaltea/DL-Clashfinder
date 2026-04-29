@@ -1,6 +1,6 @@
 import { ComparisonView } from "../components/ComparisonView";
 import type { ClashDecisionMap, FestivalExport, IntentMap, SetTimeMap } from "../types";
-import type { GroupSyncState } from "../utils/groupSync";
+import type { GroupMemberInfo, GroupMemberRole, GroupSyncState } from "../utils/groupSync";
 
 interface CompareProps {
   intents: IntentMap;
@@ -21,6 +21,10 @@ interface CompareProps {
   groupCodes: string[];
   groupSyncState: GroupSyncState;
   onSyncGroup: (groupCode?: string) => void;
+  groupMembers: GroupMemberInfo[];
+  myGroupRole: GroupMemberRole;
+  onRemoveGroupMember: (memberId: string) => Promise<void>;
+  onSetGroupMemberRole: (memberId: string, role: "admin" | "member") => Promise<void>;
 }
 
 export const Compare = (props: CompareProps) => <ComparisonView {...props} />;

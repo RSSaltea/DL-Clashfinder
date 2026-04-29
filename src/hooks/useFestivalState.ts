@@ -21,11 +21,15 @@ import {
 } from "../utils/accountSync";
 import { createExportPayload } from "../utils/export";
 import {
+  type GroupMemberInfo,
+  type GroupMemberRole,
   type GroupSyncState,
   isGroupSyncConfigured,
   normaliseGroupCode,
   pullGroupPlans,
   pushGroupPlan,
+  removeGroupMember as removeGroupMemberRpc,
+  setGroupMemberRole as setGroupMemberRoleRpc,
 } from "../utils/groupSync";
 import {
   getNextIntent,
@@ -128,6 +132,8 @@ export const useFestivalState = () => {
     loadGroupClashVotesByCode(loadGroupCode(), loadGroupClashVotes()),
   );
   const [groupSyncState, setGroupSyncState] = useState<GroupSyncState>(() => getInitialGroupSyncState());
+  const [groupMembers, setGroupMembers] = useState<GroupMemberInfo[]>([]);
+  const [myGroupRole, setMyGroupRole] = useState<GroupMemberRole>("member");
   const groupMemberId = useMemo(() => loadGroupMemberId(), []);
   const activeMemberId = account?.userId ?? groupMemberId;
   const syncConfigured = useMemo(() => isGroupSyncConfigured(), []);
@@ -378,6 +384,7 @@ export const useFestivalState = () => {
 
     setGroupCodeDraftState(nextGroupCode);
     setSyncedImports([]);
+    setGroupMembers([]);
     setGroupCodeState(nextGroupCode);
     activeGroupCodeRef.current = nextGroupCode;
     rememberGroupCode(nextGroupCode);
@@ -435,22 +442,25 @@ export const useFestivalState = () => {
 
       await pushGroupPlan(currentGroupCode, activeMemberId, payload);
 
-      const remotePlans = await pullGroupPlans(currentGroupCode, activeMemberId);
+      const pullResult = await pullGroupPlans(currentGroupCode, activeMemberId);
 
       if (activeGroupCodeRef.current !== currentGroupCode) {
         return;
       }
 
       const syncedAt = new Date().toISOString();
-      setSyncedImports(remotePlans);
+      const otherCount = pullResult.plans.length;
+      setSyncedImports(pullResult.plans);
+      setGroupMembers(pullResult.members);
+      setMyGroupRole(pullResult.myRole);
       setGroupSyncState({
         configured: true,
         status: "synced",
-        message: remotePlans.length === 0
+        message: otherCount === 0
           ? `Synced ${currentGroupCode}. Waiting for other people to join.`
-          : `Synced ${currentGroupCode} with ${remotePlans.length} other ${remotePlans.length === 1 ? "person" : "people"}.`,
+          : `Synced ${currentGroupCode} with ${otherCount} other ${otherCount === 1 ? "person" : "people"}.`,
         lastSyncedAt: syncedAt,
-        memberCount: remotePlans.length + 1,
+        memberCount: pullResult.members.length,
       });
     } catch (error) {
       if (activeGroupCodeRef.current !== currentGroupCode) {
@@ -476,6 +486,16 @@ export const useFestivalState = () => {
     syncConfigured,
     syncedImports.length,
   ]);
+
+  const removeGroupMember = useCallback(async (memberIdToRemove: string) => {
+    await removeGroupMemberRpc(groupCode, memberIdToRemove, activeMemberId);
+    await syncGroupNow();
+  }, [groupCode, activeMemberId, syncGroupNow]);
+
+  const setGroupMemberRole = useCallback(async (targetMemberId: string, newRole: "admin" | "member") => {
+    await setGroupMemberRoleRpc(groupCode, targetMemberId, newRole, activeMemberId);
+    await syncGroupNow();
+  }, [groupCode, activeMemberId, syncGroupNow]);
 
   useEffect(() => {
     const currentGroupCode = normaliseGroupCode(groupCode);
@@ -508,6 +528,9 @@ export const useFestivalState = () => {
     intents,
     clashDecisions,
     groupClashVotes,
+    groupMembers,
+    myGroupRole,
+    activeMemberId,
     selectedArtistIds,
     setClashDecision,
     setGroupClashVote,
@@ -524,6 +547,8 @@ export const useFestivalState = () => {
     syncedImports,
     groupSyncState,
     syncGroupNow,
+    removeGroupMember,
+    setGroupMemberRole,
     imports,
     addImports,
     removeImport,

@@ -164,6 +164,10 @@ const AppRoutes = () => {
               groupCodes={festivalState.groupCodes}
               groupSyncState={festivalState.groupSyncState}
               onSyncGroup={festivalState.syncGroupNow}
+              groupMembers={festivalState.groupMembers}
+              myGroupRole={festivalState.myGroupRole}
+              onRemoveGroupMember={festivalState.removeGroupMember}
+              onSetGroupMemberRole={festivalState.setGroupMemberRole}
             />
           }
         />

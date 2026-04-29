@@ -1,9 +1,9 @@
-import { Cloud, Download, FileJson, RefreshCw, Trash2, Upload } from "lucide-react";
+import { Cloud, Crown, Download, FileJson, RefreshCw, Shield, Trash2, Upload, UserMinus } from "lucide-react";
 import { ChangeEvent, KeyboardEvent, useMemo, useState } from "react";
 import { festivalDays } from "../data/lineup";
 import type { Artist, ClashDecisionMap, FestivalExport, IntentMap, ProfilePlan, SetTimeMap } from "../types";
 import { createExportPayload, downloadJson } from "../utils/export";
-import type { GroupSyncState } from "../utils/groupSync";
+import type { GroupMemberInfo, GroupMemberRole, GroupSyncState } from "../utils/groupSync";
 import { getClashVoteSummary, getGroupClashDecisionMap } from "../utils/groupVotes";
 import { parseImportedPlan } from "../utils/import";
 import { loadFreeTimeWindow } from "../utils/localStorage";
@@ -36,6 +36,10 @@ interface ComparisonViewProps {
   groupCodes: string[];
   groupSyncState: GroupSyncState;
   onSyncGroup: (groupCode?: string) => void;
+  groupMembers: GroupMemberInfo[];
+  myGroupRole: GroupMemberRole;
+  onRemoveGroupMember: (memberId: string) => Promise<void>;
+  onSetGroupMemberRole: (memberId: string, role: "admin" | "member") => Promise<void>;
 }
 
 interface GroupRow {
@@ -74,8 +78,31 @@ export const ComparisonView = ({
   groupCodes,
   groupSyncState,
   onSyncGroup,
+  groupMembers,
+  myGroupRole,
+  onRemoveGroupMember,
+  onSetGroupMemberRole,
 }: ComparisonViewProps) => {
   const [error, setError] = useState("");
+  const [memberActionError, setMemberActionError] = useState("");
+
+  const handleRemoveMember = async (memberId: string) => {
+    setMemberActionError("");
+    try {
+      await onRemoveGroupMember(memberId);
+    } catch (err) {
+      setMemberActionError(err instanceof Error ? err.message : "Failed to remove member.");
+    }
+  };
+
+  const handleSetRole = async (memberId: string, role: "admin" | "member") => {
+    setMemberActionError("");
+    try {
+      await onSetGroupMemberRole(memberId, role);
+    } catch (err) {
+      setMemberActionError(err instanceof Error ? err.message : "Failed to update role.");
+    }
+  };
 
   const freeTimeWindow = useMemo(() => loadFreeTimeWindow(), []);
   const windowStartMins = timeToMinutes(freeTimeWindow.start) ?? 600;
@@ -292,6 +319,63 @@ export const ComparisonView = ({
           </span>
         )}
       </div>
+
+      {groupCode && groupMembers.length > 0 && (
+        <section className="group-members-panel">
+          <div className="group-members-header">
+            <h2>Group Members</h2>
+            <span>{groupMembers.length} member{groupMembers.length !== 1 ? "s" : ""}</span>
+          </div>
+          {memberActionError && <div className="error-banner">{memberActionError}</div>}
+          <div className="members-list">
+            {groupMembers.map((member) => {
+              const canRemove = !member.isMe && (
+                myGroupRole === "leader" ||
+                (myGroupRole === "admin" && member.role === "member")
+              );
+              const canChangeRole = !member.isMe && myGroupRole === "leader" && member.role !== "leader";
+
+              return (
+                <div key={member.memberId} className="member-row">
+                  <div className="member-info">
+                    {member.role === "leader" && <Crown size={14} className="role-icon role-icon--leader" />}
+                    {member.role === "admin" && <Shield size={14} className="role-icon role-icon--admin" />}
+                    <strong>{member.profileName}</strong>
+                    <span className={`role-badge role-badge--${member.role}`}>
+                      {member.role === "leader" ? "Leader" : member.role === "admin" ? "Admin" : "Member"}
+                    </span>
+                    {member.isMe && <span className="member-you">you</span>}
+                  </div>
+                  {(canRemove || canChangeRole) && (
+                    <div className="member-actions">
+                      {canChangeRole && (
+                        <button
+                          type="button"
+                          className="secondary-button"
+                          onClick={() => handleSetRole(member.memberId, member.role === "admin" ? "member" : "admin")}
+                        >
+                          <Shield size={14} />
+                          {member.role === "admin" ? "Remove admin" : "Make admin"}
+                        </button>
+                      )}
+                      {canRemove && (
+                        <button
+                          type="button"
+                          className="secondary-button"
+                          onClick={() => handleRemoveMember(member.memberId)}
+                        >
+                          <UserMinus size={14} />
+                          Remove
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       <details className="backup-panel">
         <summary>JSON backup</summary>
