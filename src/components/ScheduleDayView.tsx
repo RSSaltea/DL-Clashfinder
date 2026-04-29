@@ -274,6 +274,31 @@ export const ScheduleDayView = ({
       { length: Math.floor(timelineDuration / 60) + 1 },
       (_, index) => timelineStart + index * 60,
     );
+    const visibleAttending = freeTimeOnly ? [] : schedule.attending;
+
+    const renderStagedGap = (gap: ScheduleGap) => {
+      const top = (gap.start - timelineStart) * pixelsPerMinute;
+      const duration = gap.end - gap.start;
+      const height = Math.max(duration * pixelsPerMinute - 2, 12);
+      const compactClass = duration < 20
+        ? " timetable-block--tiny"
+        : duration < 35
+          ? " timetable-block--short"
+          : "";
+
+      return (
+        <article
+          className={`timetable-block timetable-block--gap timetable-block--staged-gap${compactClass}`}
+          key={`staged-gap-${schedule.dayId}-${gap.start}-${gap.end}`}
+          style={{ top: `${top}px`, height: `${height}px` }}
+        >
+          <div className="timetable-block__main">
+            <strong>{formatDuration(duration)} free</strong>
+            <span>{formatRange(gap.start, gap.end)}</span>
+          </div>
+        </article>
+      );
+    };
 
     return (
       <div className="timetable-staged-outer">
@@ -297,7 +322,7 @@ export const ScheduleDayView = ({
             })}
           </div>
           {festivalStages.map((stage) => {
-            const stageItems = schedule.attending.filter((item) => item.artist.stage === stage.id);
+            const stageItems = visibleAttending.filter((item) => item.artist.stage === stage.id);
             return (
               <div key={stage.id} className="timetable-track">
                 {ticks.map((tick) => {
@@ -335,6 +360,11 @@ export const ScheduleDayView = ({
               </div>
             );
           })}
+          {schedule.gaps.length > 0 && (
+            <div className="timetable-staged-free-layer">
+              {schedule.gaps.map(renderStagedGap)}
+            </div>
+          )}
         </div>
       </div>
     );
@@ -362,12 +392,12 @@ export const ScheduleDayView = ({
         <div className="empty-state tight">
           <p className="muted">No timed artists inside the current free-time window.</p>
         </div>
-      ) : viewMode === "timetable" && showStages ? (
-        renderStagedTimetable()
       ) : activeSegments.length === 0 ? (
         <div className="empty-state tight">
           <p className="muted">No free time gaps on this day — picks are back to back!</p>
         </div>
+      ) : viewMode === "timetable" && showStages ? (
+        renderStagedTimetable()
       ) : viewMode === "timetable" ? (
         renderTimetable()
       ) : (

@@ -24,6 +24,8 @@ interface TimetableViewProps {
   showStages: boolean;
   hideUnpicked?: boolean;
   freeTimeOnly?: boolean;
+  artistIds?: string[];
+  freeTimeGaps?: Array<{ start: number; end: number }>;
 }
 
 export const TimetableView = ({
@@ -33,8 +35,15 @@ export const TimetableView = ({
   showStages,
   hideUnpicked = false,
   freeTimeOnly = false,
+  artistIds,
+  freeTimeGaps,
 }: TimetableViewProps) => {
-  const dayArtists = useMemo(() => lineup.filter((a) => a.day === day), [day]);
+  const dayArtists = useMemo(() => {
+    const artists = lineup.filter((a) => a.day === day);
+    if (!artistIds) return artists;
+    const ids = new Set(artistIds);
+    return artists.filter((artist) => ids.has(artist.id));
+  }, [artistIds, day]);
 
   // When freeTimeOnly, force single-lane so gaps are visible
   const effectiveShowStages = showStages && !freeTimeOnly;
@@ -48,8 +57,12 @@ export const TimetableView = ({
       if (start < s) s = start;
       if (end > e) e = end;
     }
+    for (const gap of freeTimeGaps ?? []) {
+      if (gap.start < s) s = gap.start;
+      if (gap.end > e) e = gap.end;
+    }
     return { rangeStart: Math.floor(s / 60) * 60, rangeEnd: Math.ceil(e / 60) * 60 };
-  }, [dayArtists, hideUnpicked, intents, setTimes]);
+  }, [dayArtists, freeTimeGaps, hideUnpicked, intents, setTimes]);
 
   const hours = useMemo(() => {
     const h: number[] = [];
@@ -79,6 +92,7 @@ export const TimetableView = ({
 
   // Gaps between consecutive picks (used in single-lane and FREE row)
   const pickedGaps = useMemo(() => {
+    if (freeTimeGaps) return freeTimeGaps;
     const gaps: { start: number; end: number }[] = [];
     for (let i = 0; i < pickedSorted.length - 1; i++) {
       const curr = pickedSorted[i];
@@ -88,11 +102,12 @@ export const TimetableView = ({
       }
     }
     return gaps;
-  }, [pickedSorted]);
+  }, [freeTimeGaps, pickedSorted]);
 
   // Merged free-time blocks across all stages (for FREE row in stages mode)
   const stagesFreeTime = useMemo(() => {
     if (!effectiveShowStages || !hideUnpicked) return [];
+    if (freeTimeGaps) return freeTimeGaps;
     if (pickedSorted.length === 0) return [];
     const merged: { start: number; end: number }[] = [];
     for (const { start, end } of pickedSorted) {
@@ -109,7 +124,7 @@ export const TimetableView = ({
       }
     }
     return gaps;
-  }, [effectiveShowStages, hideUnpicked, pickedSorted]);
+  }, [effectiveShowStages, freeTimeGaps, hideUnpicked, pickedSorted]);
 
   const renderBlock = (artist: Artist) => {
     const { start, end } = toFestivalMins(artist, setTimes);

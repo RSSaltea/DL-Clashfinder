@@ -121,7 +121,10 @@ export const Itinerary = ({ intents, setTimes, clashDecisions }: ItineraryProps)
         <p className="error-banner">Could not save the image. Try switching to List view and exporting again.</p>
       )}
 
-      <div className="itinerary-export-area" ref={exportRef}>
+      <div
+        className={`itinerary-export-area${viewMode === "horizontal" ? " itinerary-export-area--horizontal" : ""}`}
+        ref={exportRef}
+      >
         {viewMode === "horizontal"
           ? visibleDays.map((day) => (
               <div key={day.id} className="day-group">
@@ -135,6 +138,12 @@ export const Itinerary = ({ intents, setTimes, clashDecisions }: ItineraryProps)
                   showStages={showStages}
                   hideUnpicked
                   freeTimeOnly={freeTimeOnly}
+                  artistIds={schedules
+                    .find((schedule) => schedule.dayId === day.id)
+                    ?.attending.map((item) => item.artist.id)}
+                  freeTimeGaps={schedules
+                    .find((schedule) => schedule.dayId === day.id)
+                    ?.gaps.map((gap) => ({ start: gap.start, end: gap.end }))}
                 />
               </div>
             ))

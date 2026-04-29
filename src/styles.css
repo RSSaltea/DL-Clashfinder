@@ -690,6 +690,24 @@ p {
   background: var(--bg);
 }
 
+.itinerary-export-area--horizontal .day-group {
+  gap: 0.55rem;
+  margin-top: 0.9rem;
+}
+
+.itinerary-export-area--horizontal .day-heading {
+  align-items: center;
+  padding-bottom: 0.35rem;
+}
+
+.itinerary-export-area--horizontal .day-heading h2 {
+  font-size: clamp(1.05rem, 2vw, 1.35rem);
+}
+
+.itinerary-export-area--horizontal .day-heading span {
+  font-size: 0.84rem;
+}
+
 .search-field,
 .select-field,
 .text-field {
@@ -2054,16 +2072,20 @@ p {
   }
 
   .view-menu-button {
-    width: 3.35rem;
-    min-width: 3.35rem;
-    height: 3.35rem;
-    padding: 0;
-    border-radius: 10px;
-    gap: 0.1rem;
+    width: auto;
+    min-width: 0;
+    height: 2.75rem;
+    padding: 0 0.75rem;
+    border-radius: 8px;
+    gap: 0.35rem;
   }
 
   .view-menu-button__label {
-    display: none;
+    display: inline;
+    max-width: 6.5rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .view-menu-panel {
@@ -2113,6 +2135,7 @@ input.is-error {
 .tt-scroll {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
 }
 
 .tt-header {
@@ -2456,6 +2479,7 @@ input.is-error {
 .timetable-staged-outer {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
   border-radius: 8px;
   border: 1px solid var(--line);
 }
@@ -2500,7 +2524,28 @@ input.is-error {
 }
 
 .timetable--staged .timetable-track {
+  grid-row: 1;
   border-left: 1px solid var(--line);
+}
+
+.timetable-staged-free-layer {
+  position: relative;
+  z-index: 3;
+  grid-column: 2 / -1;
+  grid-row: 1;
+  height: 100%;
+  pointer-events: none;
+}
+
+.timetable-block--staged-gap {
+  left: 0.35rem;
+  right: 0.35rem;
+  border-left-width: 5px;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
+}
+
+.timetable-block--staged-gap .timetable-block__main {
+  align-content: center;
 }
 
 [data-theme="light"] .timetable-staged-headers,
@@ -2508,11 +2553,73 @@ input.is-error {
   background: var(--panel);
 }
 
-@media (max-width: 480px) {
-  .timetable-axis-spacer {
-    width: 3.6rem;
+@media (max-width: 760px) {
+  .timetable {
+    touch-action: pan-y;
   }
+
+  .timetable-staged-outer {
+    overflow-x: visible;
+    touch-action: pan-y;
+  }
+
+  .timetable-staged-headers {
+    position: static;
+  }
+
+  .timetable-axis-spacer {
+    width: 3.2rem;
+  }
+
+  .timetable-staged-col-header {
+    min-width: 0;
+    padding: 0.45rem 0.12rem;
+    overflow: hidden;
+    font-size: 0.55rem;
+    letter-spacing: 0.02em;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   .timetable--staged {
-    grid-template-columns: 3.6rem repeat(4, minmax(8rem, 1fr));
+    grid-template-columns: 3.2rem repeat(4, minmax(0, 1fr));
+    width: 100%;
+    min-width: 0;
+  }
+
+  .timetable--staged .timetable-axis span {
+    right: 0.4rem;
+    font-size: 0.68rem;
+  }
+
+  .timetable--staged .timetable-block {
+    padding-inline: 0.35rem;
+  }
+
+  .timetable--staged .timetable-block__title {
+    gap: 0.25rem;
+  }
+
+  .timetable--staged .timetable-block strong {
+    font-size: 0.72rem;
+  }
+
+  .timetable--staged .timetable-block span,
+  .timetable--staged .timetable-block em {
+    font-size: 0.68rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .itinerary-export-area--horizontal .day-heading {
+    align-items: flex-start;
+  }
+
+  .itinerary-export-area--horizontal .day-heading h2 {
+    font-size: 1.08rem;
+  }
+
+  .itinerary-export-area--horizontal .day-heading span {
+    font-size: 0.78rem;
   }
 }
