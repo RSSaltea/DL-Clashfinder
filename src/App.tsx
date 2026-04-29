@@ -1,5 +1,5 @@
-import { AlertTriangle, CalendarDays, ExternalLink, Map, Route as RouteIcon, Timer, UsersRound } from "lucide-react";
-import { useEffect } from "react";
+import { AlertTriangle, CalendarDays, ExternalLink, Map, Menu, Route as RouteIcon, Timer, UsersRound, X } from "lucide-react";
+import { useEffect, useState } from "react";
 import { HashRouter, NavLink, Route, Routes, useLocation } from "react-router-dom";
 import { AuthDialog } from "./components/AuthDialog";
 import { festival } from "./data/lineup";
@@ -25,41 +25,54 @@ const ScrollToTop = () => {
 const downloadLogoUrl = `${import.meta.env.BASE_URL}download-logo.png`;
 
 const AppRoutes = () => {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const festivalState = useFestivalState();
+
+  const closeMenu = () => setMobileMenuOpen(false);
 
   return (
     <>
       <ScrollToTop />
       <header className="app-header">
-        <div className="brand-lockup">
-          <img className="download-logo" src={downloadLogoUrl} alt="Download Festival" />
-          <div>
-            <strong>{festival.name}</strong>
-            <span>{festival.year} Clash Finder</span>
+        <div className="app-header__top">
+          <div className="brand-lockup">
+            <img className="download-logo" src={downloadLogoUrl} alt="Download Festival" />
+            <div>
+              <strong>{festival.name}</strong>
+              <span>{festival.year} Clash Finder</span>
+            </div>
           </div>
+          <button
+            className="mobile-menu-toggle"
+            onClick={() => setMobileMenuOpen((v) => !v)}
+            aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+            aria-expanded={mobileMenuOpen}
+          >
+            {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
+          </button>
         </div>
-        <nav className="app-nav" aria-label="Main navigation">
-          <NavLink to="/" end>
+        <nav className={`app-nav${mobileMenuOpen ? " is-open" : ""}`} aria-label="Main navigation">
+          <NavLink to="/" end onClick={closeMenu}>
             <CalendarDays size={18} />
             <span>Lineup</span>
           </NavLink>
-          <NavLink to="/free-time">
+          <NavLink to="/free-time" onClick={closeMenu}>
             <Timer size={18} />
             <span>Free Time</span>
           </NavLink>
-          <NavLink to="/itinerary">
+          <NavLink to="/itinerary" onClick={closeMenu}>
             <Map size={18} />
             <span>Itinerary</span>
           </NavLink>
-          <NavLink to="/clashes">
+          <NavLink to="/clashes" onClick={closeMenu}>
             <AlertTriangle size={18} />
             <span>Clashes</span>
           </NavLink>
-          <NavLink to="/compare">
+          <NavLink to="/compare" onClick={closeMenu}>
             <UsersRound size={18} />
             <span>Compare</span>
           </NavLink>
-          <NavLink to="/group-itinerary">
+          <NavLink to="/group-itinerary" onClick={closeMenu}>
             <RouteIcon size={18} />
             <span>Group Itinerary</span>
           </NavLink>

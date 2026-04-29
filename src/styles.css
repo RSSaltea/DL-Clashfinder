@@ -72,6 +72,25 @@ p {
   backdrop-filter: blur(18px);
 }
 
+.app-header__top {
+  display: contents;
+}
+
+.mobile-menu-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
 .brand-lockup {
   display: flex;
   align-items: center;
@@ -1549,18 +1568,40 @@ p {
 
 @media (max-width: 760px) {
   .app-header {
-    align-items: stretch;
     flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    padding-bottom: 0;
+  }
+
+  .app-header__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 0.85rem;
+  }
+
+  .mobile-menu-toggle {
+    display: flex;
   }
 
   .app-nav {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    display: none;
+    flex-direction: column;
+    gap: 0.35rem;
+    padding: 0.75rem 0 0.85rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .app-nav.is-open {
+    display: flex;
   }
 
   .app-nav a {
+    width: 100%;
+    justify-content: flex-start;
+    padding: 0.65rem 0.85rem;
     min-width: 0;
-    padding-inline: 0.35rem;
   }
 
   .toolbar-band,
@@ -1624,10 +1665,6 @@ p {
 
   .brand-lockup {
     min-width: 0;
-  }
-
-  .app-nav a span {
-    font-size: 0.85rem;
   }
 
   .filters-panel {
