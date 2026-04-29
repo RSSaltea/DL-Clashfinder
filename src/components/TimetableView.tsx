@@ -4,7 +4,7 @@ import { festivalStages, lineup } from "../data/lineup";
 import type { Artist, DayId, IntentMap, SetTimeMap } from "../types";
 import { getEffectiveTime, minutesToTime, timeToMinutes } from "../utils/time";
 
-const HOUR_W = 150; // px per hour
+const HOUR_W = 180; // px per hour (45px per 15-min segment)
 const LABEL_W = 76; // px for stage label column
 const ROW_H = 58; // px per stage row
 
@@ -43,6 +43,14 @@ export const TimetableView = ({ day, intents, setTimes, showStages }: TimetableV
     const h: number[] = [];
     for (let m = rangeStart; m <= rangeEnd; m += 60) h.push(m);
     return h;
+  }, [rangeStart, rangeEnd]);
+
+  const quarterMarks = useMemo(() => {
+    const q: number[] = [];
+    for (let m = rangeStart; m < rangeEnd; m += 15) {
+      if (m % 60 !== 0) q.push(m);
+    }
+    return q;
   }, [rangeStart, rangeEnd]);
 
   const minsToX = (m: number) => ((m - rangeStart) / 60) * HOUR_W;
@@ -94,6 +102,11 @@ export const TimetableView = ({ day, intents, setTimes, showStages }: TimetableV
                 {hLabel(m)}
               </span>
             ))}
+            {quarterMarks.filter((m) => m % 30 === 0).map((m) => (
+              <span key={m} className="tt-hour-label tt-half-label" style={{ left: minsToX(m) }}>
+                :30
+              </span>
+            ))}
           </div>
         </div>
 
@@ -110,6 +123,9 @@ export const TimetableView = ({ day, intents, setTimes, showStages }: TimetableV
                   {stage.shortName}
                 </div>
                 <div className="tt-track" style={{ width: timeW, height: ROW_H }}>
+                  {quarterMarks.map((m) => (
+                    <div key={m} className="tt-vline tt-vline--minor" style={{ left: minsToX(m) }} />
+                  ))}
                   {hours.map((m) => (
                     <div key={m} className="tt-vline" style={{ left: minsToX(m) }} />
                   ))}
@@ -121,6 +137,9 @@ export const TimetableView = ({ day, intents, setTimes, showStages }: TimetableV
         ) : (
           <div className="tt-row tt-row--solo">
             <div className="tt-track" style={{ width: timeW, height: ROW_H }}>
+              {quarterMarks.map((m) => (
+                <div key={m} className="tt-vline tt-vline--minor" style={{ left: minsToX(m) }} />
+              ))}
               {hours.map((m) => (
                 <div key={m} className="tt-vline" style={{ left: minsToX(m) }} />
               ))}

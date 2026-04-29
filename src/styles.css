@@ -1995,6 +1995,11 @@ input.is-error {
   user-select: none;
 }
 
+.tt-half-label {
+  font-size: 0.62rem;
+  opacity: 0.55;
+}
+
 .tt-row {
   display: flex;
   align-items: stretch;
@@ -2041,6 +2046,11 @@ input.is-error {
   width: 1px;
   background: var(--line);
   pointer-events: none;
+}
+
+.tt-vline--minor {
+  background: var(--line);
+  opacity: 0.4;
 }
 
 .tt-block {
