@@ -6,7 +6,7 @@ import { getEffectiveTime, minutesToTime, timeToMinutes } from "../utils/time";
 
 const HOUR_W = 180; // px per hour (45px per 15-min segment)
 const LABEL_W = 76; // px for stage label column
-const ROW_H = 58; // px per stage row
+const ROW_H = 80; // px per stage row
 
 function toFestivalMins(artist: Artist, setTimes: SetTimeMap): { start: number; end: number } {
   const t = getEffectiveTime(artist, setTimes);
@@ -23,21 +23,23 @@ interface TimetableViewProps {
   intents: IntentMap;
   setTimes: SetTimeMap;
   showStages: boolean;
+  hideUnpicked?: boolean; // itinerary pages: skip artists with no intent
 }
 
-export const TimetableView = ({ day, intents, setTimes, showStages }: TimetableViewProps) => {
+export const TimetableView = ({ day, intents, setTimes, showStages, hideUnpicked = false }: TimetableViewProps) => {
   const dayArtists = useMemo(() => lineup.filter((a) => a.day === day), [day]);
 
   const { rangeStart, rangeEnd } = useMemo(() => {
     let s = 10 * 60;
     let e = 24 * 60;
-    for (const a of dayArtists) {
+    const relevant = hideUnpicked ? dayArtists.filter((a) => intents[a.id]) : dayArtists;
+    for (const a of relevant.length > 0 ? relevant : dayArtists) {
       const { start, end } = toFestivalMins(a, setTimes);
       if (start < s) s = start;
       if (end > e) e = end;
     }
     return { rangeStart: Math.floor(s / 60) * 60, rangeEnd: Math.ceil(e / 60) * 60 };
-  }, [dayArtists, setTimes]);
+  }, [dayArtists, hideUnpicked, intents, setTimes]);
 
   const hours = useMemo(() => {
     const h: number[] = [];
@@ -72,6 +74,7 @@ export const TimetableView = ({ day, intents, setTimes, showStages }: TimetableV
     const left = minsToX(start);
     const blockW = Math.max(minsToX(end) - left - 2, 30);
     const intent = intents[artist.id];
+    if (hideUnpicked && !intent) return null;
     return (
       <Link
         key={artist.id}
@@ -81,7 +84,7 @@ export const TimetableView = ({ day, intents, setTimes, showStages }: TimetableV
         title={`${artist.name} · ${minutesToTime(start % 1440)} – ${minutesToTime(end % 1440)}`}
       >
         <span className="tt-block__name">{artist.name}</span>
-        {blockW > 100 && (
+        {blockW > 55 && (
           <span className="tt-block__time">
             {minutesToTime(start % 1440)}–{minutesToTime(end % 1440)}
           </span>
@@ -89,6 +92,17 @@ export const TimetableView = ({ day, intents, setTimes, showStages }: TimetableV
       </Link>
     );
   };
+
+  const renderGridLines = () => (
+    <>
+      {quarterMarks.map((m) => (
+        <div key={m} className="tt-vline tt-vline--minor" style={{ left: minsToX(m) }} />
+      ))}
+      {hours.map((m) => (
+        <div key={m} className="tt-vline" style={{ left: minsToX(m) }} />
+      ))}
+    </>
+  );
 
   return (
     <div className="tt-outer">
@@ -114,6 +128,8 @@ export const TimetableView = ({ day, intents, setTimes, showStages }: TimetableV
         {showStages ? (
           festivalStages.map((stage) => {
             const artists = dayArtists.filter((a) => a.stage === stage.id);
+            const visibleArtists = hideUnpicked ? artists.filter((a) => intents[a.id]) : artists;
+            if (hideUnpicked && visibleArtists.length === 0) return null;
             return (
               <div key={stage.id} className="tt-row">
                 <div
@@ -123,12 +139,7 @@ export const TimetableView = ({ day, intents, setTimes, showStages }: TimetableV
                   {stage.shortName}
                 </div>
                 <div className="tt-track" style={{ width: timeW, height: ROW_H }}>
-                  {quarterMarks.map((m) => (
-                    <div key={m} className="tt-vline tt-vline--minor" style={{ left: minsToX(m) }} />
-                  ))}
-                  {hours.map((m) => (
-                    <div key={m} className="tt-vline" style={{ left: minsToX(m) }} />
-                  ))}
+                  {renderGridLines()}
                   {artists.map(renderBlock)}
                 </div>
               </div>
@@ -137,12 +148,7 @@ export const TimetableView = ({ day, intents, setTimes, showStages }: TimetableV
         ) : (
           <div className="tt-row tt-row--solo">
             <div className="tt-track" style={{ width: timeW, height: ROW_H }}>
-              {quarterMarks.map((m) => (
-                <div key={m} className="tt-vline tt-vline--minor" style={{ left: minsToX(m) }} />
-              ))}
-              {hours.map((m) => (
-                <div key={m} className="tt-vline" style={{ left: minsToX(m) }} />
-              ))}
+              {renderGridLines()}
               {pickedSorted.length === 0 ? (
                 <p className="tt-hint">Pick artists on the lineup to see your personal timeline.</p>
               ) : (
@@ -157,9 +163,14 @@ export const TimetableView = ({ day, intents, setTimes, showStages }: TimetableV
                         to={`/artist/${artist.id}`}
                         className={`tt-block tt-block--${intent}`}
                         style={{ left, width: blockW }}
-                        title={artist.name}
+                        title={`${artist.name} · ${minutesToTime(start % 1440)} – ${minutesToTime(end % 1440)}`}
                       >
                         <span className="tt-block__name">{artist.name}</span>
+                        {blockW > 55 && (
+                          <span className="tt-block__time">
+                            {minutesToTime(start % 1440)}–{minutesToTime(end % 1440)}
+                          </span>
+                        )}
                       </Link>
                     );
                   })}
