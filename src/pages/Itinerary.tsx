@@ -1,5 +1,6 @@
-import { CalendarDays, Download, Layers, List, StretchHorizontal, Timer } from "lucide-react";
+import { Download } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
+import { ItineraryViewControls, type ItineraryViewMode } from "../components/ItineraryViewControls";
 import { ScheduleDayView } from "../components/ScheduleDayView";
 import { TimetableView } from "../components/TimetableView";
 import { festivalDays, getDay, lineup } from "../data/lineup";
@@ -10,7 +11,6 @@ import { buildScheduleDay } from "../utils/schedule";
 import { timeToMinutes, windowEndToMins } from "../utils/time";
 
 type ItineraryDayFilter = "all" | DayId;
-type ViewMode = "list" | "vertical" | "horizontal";
 
 interface ItineraryProps {
   intents: IntentMap;
@@ -19,7 +19,7 @@ interface ItineraryProps {
 }
 
 export const Itinerary = ({ intents, setTimes, clashDecisions }: ItineraryProps) => {
-  const [viewMode, setViewMode] = useState<ViewMode>("list");
+  const [viewMode, setViewMode] = useState<ItineraryViewMode>("list");
   const [dayFilter, setDayFilter] = useState<ItineraryDayFilter>("all");
   const [showStages, setShowStages] = useState(() => loadTimetableStages());
   const [freeTimeOnly, setFreeTimeOnly] = useState(false);
@@ -67,56 +67,20 @@ export const Itinerary = ({ intents, setTimes, clashDecisions }: ItineraryProps)
 
   return (
     <main className="page-shell">
-      <section className="toolbar-band">
+      <section className="toolbar-band itinerary-toolbar">
         <div>
           <p className="eyebrow">Your day-by-day route</p>
           <h1>Itinerary</h1>
         </div>
         <div className="toolbar-right">
-          <div className="view-mode-buttons">
-            <button
-              type="button"
-              className={`secondary-button${viewMode === "list" ? " is-active" : ""}`}
-              onClick={() => setViewMode("list")}
-            >
-              <List size={16} />
-              <span>List</span>
-            </button>
-            <button
-              type="button"
-              className={`secondary-button${viewMode === "vertical" ? " is-active" : ""}`}
-              onClick={() => setViewMode("vertical")}
-            >
-              <CalendarDays size={16} />
-              <span>Vertical</span>
-            </button>
-            <button
-              type="button"
-              className={`secondary-button${viewMode === "horizontal" ? " is-active" : ""}`}
-              onClick={() => setViewMode("horizontal")}
-            >
-              <StretchHorizontal size={16} />
-              <span>Horizontal</span>
-            </button>
-            {(viewMode === "vertical" || viewMode === "horizontal") && (
-              <button
-                type="button"
-                className={`secondary-button${showStages ? " is-active" : ""}`}
-                onClick={toggleStages}
-              >
-                <Layers size={16} />
-                <span>Stages</span>
-              </button>
-            )}
-            <button
-              type="button"
-              className={`secondary-button${freeTimeOnly ? " is-active" : ""}`}
-              onClick={() => setFreeTimeOnly((v) => !v)}
-            >
-              <Timer size={16} />
-              <span>Free Time</span>
-            </button>
-          </div>
+          <ItineraryViewControls
+            viewMode={viewMode}
+            onViewModeChange={setViewMode}
+            showStages={showStages}
+            onToggleStages={toggleStages}
+            freeTimeOnly={freeTimeOnly}
+            onToggleFreeTime={() => setFreeTimeOnly((v) => !v)}
+          />
         </div>
       </section>
 
