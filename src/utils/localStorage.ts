@@ -155,3 +155,24 @@ export const saveFreeTimeWindow = (value: FreeTimeWindow) => {
 
 export const getNextIntent = (current: Intent | undefined, requested: Intent): Intent | undefined =>
   current === requested ? undefined : requested;
+
+export const loadTheme = (): "dark" | "light" =>
+  (window.localStorage.getItem("download-clash-finder:theme") as "dark" | "light") ?? "dark";
+
+export const saveTheme = (value: "dark" | "light") => {
+  window.localStorage.setItem("download-clash-finder:theme", value);
+};
+
+export const loadViewMode = (): "grid" | "timetable" =>
+  (window.localStorage.getItem("download-clash-finder:view-mode") as "grid" | "timetable") ?? "grid";
+
+export const saveViewMode = (value: "grid" | "timetable") => {
+  window.localStorage.setItem("download-clash-finder:view-mode", value);
+};
+
+export const loadTimetableStages = (): boolean =>
+  window.localStorage.getItem("download-clash-finder:timetable-stages") !== "false";
+
+export const saveTimetableStages = (value: boolean) => {
+  window.localStorage.setItem("download-clash-finder:timetable-stages", String(value));
+};

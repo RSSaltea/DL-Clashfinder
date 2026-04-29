@@ -85,6 +85,21 @@ export const ComparisonView = ({
 }: ComparisonViewProps) => {
   const [error, setError] = useState("");
   const [memberActionError, setMemberActionError] = useState("");
+  const [nameError, setNameError] = useState("");
+
+  // Deduplicate members by profileName (keep isMe first, then most recently synced)
+  const deduplicatedMembers = useMemo(() => {
+    const seen = new Map<string, typeof groupMembers[0]>();
+    for (const m of groupMembers) {
+      const key = m.profileName.toLowerCase().trim();
+      if (!seen.has(key) || m.isMe) {
+        seen.set(key, m);
+      }
+    }
+    return Array.from(seen.values());
+  }, [groupMembers]);
+
+  const profileNameIsMe = profileName.trim().toLowerCase() === "me" || profileName.trim() === "";
 
   const handleRemoveMember = async (memberId: string) => {
     setMemberActionError("");
@@ -265,7 +280,20 @@ export const ComparisonView = ({
       <section className="compare-actions">
         <label className="text-field">
           <span>Your name</span>
-          <input value={profileName} onChange={(event) => setProfileName(event.target.value)} />
+          <input
+            value={profileName}
+            onChange={(event) => {
+              const val = event.target.value;
+              setProfileName(val);
+              if (val.trim().toLowerCase() === "me" || val.trim() === "") {
+                setNameError("Please set a real name so your friends can identify you.");
+              } else {
+                setNameError("");
+              }
+            }}
+            className={nameError ? "is-error" : ""}
+          />
+          {nameError && <small className="field-error">{nameError}</small>}
         </label>
         <label className="text-field">
           <span>Group code</span>
@@ -285,7 +313,8 @@ export const ComparisonView = ({
           className="secondary-button sync-button"
           type="button"
           onClick={handleGroupSync}
-          disabled={!hasDraftGroupCode || groupSyncState.status === "syncing"}
+          disabled={!hasDraftGroupCode || groupSyncState.status === "syncing" || profileNameIsMe}
+          title={profileNameIsMe ? "Set a real name before syncing" : undefined}
         >
           <RefreshCw size={18} />
           {groupSyncState.status === "syncing" ? "Syncing" : draftNeedsApply ? "Switch & sync" : "Sync now"}
@@ -320,15 +349,15 @@ export const ComparisonView = ({
         )}
       </div>
 
-      {groupCode && groupMembers.length > 0 && (
+      {groupCode && deduplicatedMembers.length > 0 && (
         <section className="group-members-panel">
           <div className="group-members-header">
             <h2>Group Members</h2>
-            <span>{groupMembers.length} member{groupMembers.length !== 1 ? "s" : ""}</span>
+            <span>{deduplicatedMembers.length} member{deduplicatedMembers.length !== 1 ? "s" : ""}</span>
           </div>
           {memberActionError && <div className="error-banner">{memberActionError}</div>}
           <div className="members-list">
-            {groupMembers.map((member) => {
+            {deduplicatedMembers.map((member) => {
               const canRemove = !member.isMe && (
                 myGroupRole === "leader" ||
                 (myGroupRole === "admin" && member.role === "member")

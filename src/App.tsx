@@ -1,9 +1,10 @@
-import { AlertTriangle, CalendarDays, ExternalLink, Map, Menu, Route as RouteIcon, Timer, UsersRound, X } from "lucide-react";
+import { AlertTriangle, CalendarDays, ExternalLink, Map, Menu, Moon, Route as RouteIcon, Sun, Timer, UsersRound, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { HashRouter, NavLink, Route, Routes, useLocation } from "react-router-dom";
 import { AuthDialog } from "./components/AuthDialog";
 import { festival } from "./data/lineup";
 import { useFestivalState } from "./hooks/useFestivalState";
+import { loadTheme, saveTheme } from "./utils/localStorage";
 import { ArtistDetail } from "./pages/ArtistDetail";
 import { Clashes } from "./pages/Clashes";
 import { Compare } from "./pages/Compare";
@@ -26,9 +27,21 @@ const downloadLogoUrl = `${import.meta.env.BASE_URL}download-logo.png`;
 
 const AppRoutes = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [theme, setTheme] = useState<"dark" | "light">(() => {
+    const t = loadTheme();
+    document.documentElement.setAttribute("data-theme", t);
+    return t;
+  });
   const festivalState = useFestivalState();
 
   const closeMenu = () => setMobileMenuOpen(false);
+
+  const toggleTheme = () => {
+    const next = theme === "dark" ? "light" : "dark";
+    setTheme(next);
+    saveTheme(next);
+    document.documentElement.setAttribute("data-theme", next);
+  };
 
   return (
     <>
@@ -76,6 +89,13 @@ const AppRoutes = () => {
             <RouteIcon size={18} />
             <span>Group Itinerary</span>
           </NavLink>
+          <button
+            className="icon-button theme-toggle"
+            onClick={toggleTheme}
+            aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+          >
+            {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+          </button>
           <AuthDialog
             account={festivalState.account}
             configured={festivalState.accountConfigured}

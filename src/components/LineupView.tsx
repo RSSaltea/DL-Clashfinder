@@ -1,10 +1,12 @@
-import { Filter, Search, SlidersHorizontal } from "lucide-react";
+import { Filter, Layers, LayoutGrid, Search, SlidersHorizontal, StretchHorizontal } from "lucide-react";
 import { useMemo, useState } from "react";
 import { festivalDays, festivalStages, lineup } from "../data/lineup";
 import type { Artist, ArtistTightGap, DayId, Intent, IntentMap, SetTimeMap, StageId } from "../types";
 import { getAllClashes, getAllTightGaps } from "../utils/clash";
+import { loadTimetableStages, loadViewMode, saveTimetableStages, saveViewMode } from "../utils/localStorage";
 import { getEffectiveTime } from "../utils/time";
 import { ArtistCard } from "./ArtistCard";
+import { TimetableView } from "./TimetableView";
 
 type DayFilter = "all" | DayId;
 type StageFilter = "all" | StageId;
@@ -33,6 +35,28 @@ export const LineupView = ({ intents, onIntentChange, setTimes }: LineupViewProp
   const [stageFilter, setStageFilter] = useState<StageFilter>("all");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [search, setSearch] = useState("");
+  const [viewMode, setViewMode] = useState<"grid" | "timetable">(() => loadViewMode());
+  const [showStages, setShowStages] = useState(() => loadTimetableStages());
+
+  const switchToTimetable = () => {
+    if (dayFilter === "all") setDayFilter(festivalDays[0].id);
+    setViewMode("timetable");
+    saveViewMode("timetable");
+  };
+
+  const switchToGrid = () => {
+    setViewMode("grid");
+    saveViewMode("grid");
+  };
+
+  const toggleStages = () => {
+    const next = !showStages;
+    setShowStages(next);
+    saveTimetableStages(next);
+  };
+
+  // In timetable mode, always pick one day
+  const timetableDay = (dayFilter === "all" ? festivalDays[0].id : dayFilter) as DayId;
 
   const selectedArtists = useMemo(
     () => lineup.filter((artist) => Boolean(intents[artist.id])),
@@ -100,18 +124,43 @@ export const LineupView = ({ intents, onIntentChange, setTimes }: LineupViewProp
           <p className="eyebrow">Download Festival 2026</p>
           <h1>Clash Finder</h1>
         </div>
-        <div className="stat-grid">
-          <div>
-            <strong>{totals.selected}</strong>
-            <span>picked</span>
+        <div className="toolbar-right">
+          <div className="stat-grid">
+            <div>
+              <strong>{totals.selected}</strong>
+              <span>picked</span>
+            </div>
+            <div>
+              <strong>{totals.definite}</strong>
+              <span>definite</span>
+            </div>
+            <div>
+              <strong>{totals.clashingSelections}</strong>
+              <span>clashing</span>
+            </div>
           </div>
-          <div>
-            <strong>{totals.definite}</strong>
-            <span>definite</span>
-          </div>
-          <div>
-            <strong>{totals.clashingSelections}</strong>
-            <span>clashing</span>
+          <div className="view-mode-buttons">
+            {viewMode === "grid" ? (
+              <button type="button" className="secondary-button" onClick={switchToTimetable}>
+                <StretchHorizontal size={16} />
+                <span>Timetable</span>
+              </button>
+            ) : (
+              <>
+                <button type="button" className="secondary-button" onClick={switchToGrid}>
+                  <LayoutGrid size={16} />
+                  <span>Grid</span>
+                </button>
+                <button
+                  type="button"
+                  className={`secondary-button${showStages ? " is-active" : ""}`}
+                  onClick={toggleStages}
+                >
+                  <Layers size={16} />
+                  <span>Stages</span>
+                </button>
+              </>
+            )}
           </div>
         </div>
       </section>
@@ -168,7 +217,16 @@ export const LineupView = ({ intents, onIntentChange, setTimes }: LineupViewProp
         </label>
       </section>
 
-      <section className="lineup-section">
+      {viewMode === "timetable" && (
+        <TimetableView
+          day={timetableDay}
+          intents={intents}
+          setTimes={setTimes}
+          showStages={showStages}
+        />
+      )}
+
+      {viewMode === "grid" && <section className="lineup-section">
         {festivalDays
           .filter((day) => dayFilter === "all" || day.id === dayFilter)
           .map((day) => {
@@ -227,7 +285,7 @@ export const LineupView = ({ intents, onIntentChange, setTimes }: LineupViewProp
             <p>Clear a filter or search for a different artist.</p>
           </div>
         )}
-      </section>
+      </section>}
     </main>
   );
 };
