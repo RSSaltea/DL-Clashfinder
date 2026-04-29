@@ -277,6 +277,8 @@ export const ScheduleDayView = ({
     const timelineEnd = Math.ceil(Math.max(...segments.map(getSegmentEnd)) / 60) * 60;
     const timelineDuration = Math.max(timelineEnd - timelineStart, 60);
     const timelineHeight = Math.max(520, timelineDuration * 2.4);
+    const stagedTopPadding = 18;
+    const stagedTimelineHeight = timelineHeight + stagedTopPadding;
     const pixelsPerMinute = timelineHeight / timelineDuration;
     const ticks = Array.from(
       { length: Math.floor(timelineDuration / 60) + 1 },
@@ -322,10 +324,10 @@ export const ScheduleDayView = ({
             </div>
           ))}
         </div>
-        <div className="timetable timetable--staged" style={{ height: `${timelineHeight}px` }}>
+        <div className="timetable timetable--staged" style={{ height: `${stagedTimelineHeight}px` }}>
           <div className="timetable-axis" aria-hidden="true">
             {ticks.map((tick) => {
-              const top = (tick - timelineStart) * pixelsPerMinute;
+              const top = stagedTopPadding + (tick - timelineStart) * pixelsPerMinute;
               return (
                 <span key={tick} style={{ top: `${top}px` }}>
                   {tick === 1440 ? "00:00" : minutesToTime(tick)}
@@ -338,16 +340,16 @@ export const ScheduleDayView = ({
             return (
               <div key={stage.id} className="timetable-track">
                 {quarterTicks.map((tick) => {
-                  const top = (tick - timelineStart) * pixelsPerMinute;
+                  const top = stagedTopPadding + (tick - timelineStart) * pixelsPerMinute;
                   return <div className="timetable-line timetable-line--minor" key={tick} style={{ top: `${top}px` }} />;
                 })}
                 {ticks.map((tick) => {
-                  const top = (tick - timelineStart) * pixelsPerMinute;
+                  const top = stagedTopPadding + (tick - timelineStart) * pixelsPerMinute;
                   return <div className="timetable-line" key={tick} style={{ top: `${top}px` }} />;
                 })}
                 {stageItems.map((item) => {
                   const duration = item.end - item.start;
-                  const top = (item.start - timelineStart) * pixelsPerMinute;
+                  const top = stagedTopPadding + (item.start - timelineStart) * pixelsPerMinute;
                   const height = Math.max(duration * pixelsPerMinute - 2, 12);
                   const compactClass = duration < 20
                     ? " timetable-block--tiny"
