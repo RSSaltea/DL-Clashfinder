@@ -5,6 +5,7 @@ interface HomeProps {
   intents: IntentMap;
   setTimes: SetTimeMap;
   onIntentChange: (artistId: string, intent: Intent) => void;
+  includeDistrictX: boolean;
 }
 
 export const Home = (props: HomeProps) => <LineupView {...props} />;

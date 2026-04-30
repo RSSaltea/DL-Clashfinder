@@ -1,7 +1,7 @@
 import { getStage, lineup } from "../data/lineup";
 import type { Artist, ClashDecisionMap, IntentMap, ProfilePlan, SetTimeMap } from "../types";
 import { getAllClashes } from "./clash";
-import { formatDuration, getEffectiveTime, timeToMinutes } from "./time";
+import { formatDuration, getEffectiveTime, getTimeBounds } from "./time";
 
 export interface ArtistSupport {
   supporters: string[];
@@ -45,17 +45,16 @@ export const getTimedArtist = (
   supportMap?: Map<string, ArtistSupport>,
 ): TimedArtist | undefined => {
   const time = getEffectiveTime(artist, setTimes);
-  const start = timeToMinutes(time.start);
-  const end = timeToMinutes(time.end);
+  const bounds = getTimeBounds(time);
 
-  if (start === undefined || end === undefined || end <= start) {
+  if (!bounds) {
     return undefined;
   }
 
   return {
     artist,
-    start,
-    end,
+    start: bounds.start,
+    end: bounds.end,
     supporters: supportMap?.get(artist.id),
   };
 };
@@ -134,13 +133,21 @@ export const getSupportMap = (profiles: ProfilePlan[]) => {
   return supportMap;
 };
 
-export const getArtistsFromIntents = (intents: IntentMap, dayId?: Artist["day"]) =>
-  lineup.filter((artist) => Boolean(intents[artist.id]) && (!dayId || artist.day === dayId));
+export const getArtistsFromIntents = (
+  intents: IntentMap,
+  dayId?: Artist["day"],
+  artists: Artist[] = lineup,
+) =>
+  artists.filter((artist) => Boolean(intents[artist.id]) && (!dayId || artist.day === dayId));
 
-export const getGroupArtists = (profiles: ProfilePlan[], dayId?: Artist["day"]) => {
+export const getGroupArtists = (
+  profiles: ProfilePlan[],
+  dayId?: Artist["day"],
+  artists: Artist[] = lineup,
+) => {
   const artistIds = new Set(profiles.flatMap((profile) => Object.keys(profile.intents)));
 
-  return lineup.filter((artist) => artistIds.has(artist.id) && (!dayId || artist.day === dayId));
+  return artists.filter((artist) => artistIds.has(artist.id) && (!dayId || artist.day === dayId));
 };
 
 export const getDecisionExcludedIds = (
@@ -186,8 +193,9 @@ export const getPlayingDuringGap = (
   setTimes: SetTimeMap,
   blockedArtistIds: Set<string>,
   supportMap?: Map<string, ArtistSupport>,
+  artists: Artist[] = lineup,
 ) =>
-  lineup
+  artists
     .filter((artist) => artist.day === dayId && !blockedArtistIds.has(artist.id))
     .map((artist) => getTimedArtist(artist, setTimes, supportMap))
     .filter((artist): artist is TimedArtist => Boolean(artist))
@@ -208,6 +216,7 @@ export const buildScheduleDay = (
   windowStartMins: number,
   windowEndMins: number,
   supportMap?: Map<string, ArtistSupport>,
+  availableArtists: Artist[] = lineup,
 ): ScheduleDay => {
   const { attending, excludedIds } = getAttendingArtists(pickedArtists, setTimes, clashDecisions);
   const timedAttending = attending
@@ -239,7 +248,7 @@ export const buildScheduleDay = (
         end: setStart,
         comingFrom: findBookend(timedAttending, cursor, "end"),
         goingTo: item,
-        playing: getPlayingDuringGap(dayId, cursor, setStart, setTimes, blockedArtistIds, supportMap),
+        playing: getPlayingDuringGap(dayId, cursor, setStart, setTimes, blockedArtistIds, supportMap, availableArtists),
       });
     }
 
@@ -252,7 +261,7 @@ export const buildScheduleDay = (
       end: windowEndMins,
       comingFrom: findBookend(timedAttending, cursor, "end"),
       goingTo: null,
-      playing: getPlayingDuringGap(dayId, cursor, windowEndMins, setTimes, blockedArtistIds, supportMap),
+      playing: getPlayingDuringGap(dayId, cursor, windowEndMins, setTimes, blockedArtistIds, supportMap, availableArtists),
     });
   }
 

@@ -12,6 +12,7 @@ const storageKeys = {
   groupCodes: "download-clash-finder:group-codes",
   groupMemberId: "download-clash-finder:group-member-id",
   accountSession: "download-clash-finder:account-session",
+  districtXEnabled: "download-clash-finder:district-x-enabled",
 };
 
 const parseJson = <T>(value: string | null, fallback: T): T => {
@@ -161,6 +162,13 @@ export const loadTheme = (): "dark" | "light" =>
 
 export const saveTheme = (value: "dark" | "light") => {
   window.localStorage.setItem("download-clash-finder:theme", value);
+};
+
+export const loadDistrictXEnabled = (): boolean =>
+  window.localStorage.getItem(storageKeys.districtXEnabled) === "true";
+
+export const saveDistrictXEnabled = (value: boolean) => {
+  window.localStorage.setItem(storageKeys.districtXEnabled, String(value));
 };
 
 export const loadViewMode = (): "grid" | "timetable" =>

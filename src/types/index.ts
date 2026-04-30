@@ -1,6 +1,14 @@
-export type DayId = "friday" | "saturday" | "sunday";
+export type DayId = "wednesday" | "thursday" | "friday" | "saturday" | "sunday";
 
-export type StageId = "apex" | "opus" | "avalanche" | "dogtooth";
+export type StageId =
+  | "apex"
+  | "opus"
+  | "avalanche"
+  | "dogtooth"
+  | "district-den"
+  | "district-doghouse"
+  | "district-ace-spades"
+  | "rip-courtyard";
 
 export type Intent = "interested" | "definite";
 

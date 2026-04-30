@@ -22,6 +22,28 @@ export const timeToMinutes = (value?: string) => {
   return hours * 60 + minutes;
 };
 
+export const getTimeBounds = (time: ArtistSetTime) => {
+  const start = timeToMinutes(time.start);
+  const end = timeToMinutes(time.end);
+
+  if (start === undefined || end === undefined) {
+    return undefined;
+  }
+
+  const normalizedStart = start < 6 * 60 ? start + 24 * 60 : start;
+  let normalizedEnd = end;
+
+  if (start < 6 * 60 || normalizedEnd < 6 * 60 || normalizedEnd <= start) {
+    normalizedEnd += 24 * 60;
+  }
+
+  if (normalizedEnd <= normalizedStart) {
+    return undefined;
+  }
+
+  return { start: normalizedStart, end: normalizedEnd };
+};
+
 export const minutesToTime = (minutes: number) => {
   const hours = Math.floor(minutes / 60) % 24;
   const mins = minutes % 60;
@@ -37,24 +59,15 @@ export const formatTimeRange = (time: ArtistSetTime, fallback = "Time TBC") => {
 };
 
 export const getOverlapRange = (first: ArtistSetTime, second: ArtistSetTime) => {
-  const firstStart = timeToMinutes(first.start);
-  const firstEnd = timeToMinutes(first.end);
-  const secondStart = timeToMinutes(second.start);
-  const secondEnd = timeToMinutes(second.end);
+  const firstBounds = getTimeBounds(first);
+  const secondBounds = getTimeBounds(second);
 
-  if (
-    firstStart === undefined ||
-    firstEnd === undefined ||
-    secondStart === undefined ||
-    secondEnd === undefined ||
-    firstEnd <= firstStart ||
-    secondEnd <= secondStart
-  ) {
+  if (!firstBounds || !secondBounds) {
     return undefined;
   }
 
-  const start = Math.max(firstStart, secondStart);
-  const end = Math.min(firstEnd, secondEnd);
+  const start = Math.max(firstBounds.start, secondBounds.start);
+  const end = Math.min(firstBounds.end, secondBounds.end);
 
   if (start >= end) {
     return undefined;
@@ -68,7 +81,8 @@ export const getOverlapRange = (first: ArtistSetTime, second: ArtistSetTime) => 
 
 export const windowEndToMins = (value: string): number => {
   if (value === "00:00") return 24 * 60;
-  return timeToMinutes(value) ?? 24 * 60;
+  const minutes = timeToMinutes(value) ?? 24 * 60;
+  return minutes < 6 * 60 ? minutes + 24 * 60 : minutes;
 };
 
 export const formatDuration = (totalMins: number) => {
@@ -103,9 +117,7 @@ export const computeFreeGaps = (
   const intervals = activeArtists
     .map((artist) => {
       const t = getEffectiveTime(artist, setTimes);
-      const start = timeToMinutes(t.start);
-      const end = timeToMinutes(t.end);
-      return start !== undefined && end !== undefined && end > start ? { start, end } : null;
+      return getTimeBounds(t) ?? null;
     })
     .filter((t): t is { start: number; end: number } => t !== null)
     .filter((t) => t.end > windowStartMins && t.start < windowEndMins);

@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react";
 import { festivalStages, getDay } from "../data/lineup";
+import type { FestivalStage } from "../types";
 import type { ScheduleDay, ScheduleGap, TimedArtist } from "../utils/schedule";
 import { getDirectStageTransfers, getStageLabel, getStageTransferText, getSupportText } from "../utils/schedule";
 import { formatDuration, minutesToTime } from "../utils/time";
@@ -19,6 +20,7 @@ interface ScheduleDayViewProps {
   viewMode?: ScheduleViewMode;
   showStages?: boolean;
   freeTimeOnly?: boolean;
+  stages?: FestivalStage[];
 }
 
 export type ScheduleViewMode = "list" | "timetable";
@@ -87,6 +89,7 @@ export const ScheduleDayView = ({
   viewMode = "list",
   showStages = false,
   freeTimeOnly = false,
+  stages = festivalStages,
 }: ScheduleDayViewProps) => {
   const day = getDay(schedule.dayId);
   const directTransfers = getDirectStageTransfers(schedule.attending);
@@ -318,13 +321,19 @@ export const ScheduleDayView = ({
       <div className="timetable-staged-outer">
         <div className="timetable-staged-headers">
           <div className="timetable-axis-spacer" />
-          {festivalStages.map((stage) => (
+          {stages.map((stage) => (
             <div key={stage.id} className={`timetable-staged-col-header stage-${stage.id}`}>
               {stage.shortName}
             </div>
           ))}
         </div>
-        <div className="timetable timetable--staged" style={{ height: `${stagedTimelineHeight}px` }}>
+        <div
+          className="timetable timetable--staged"
+          style={{
+            "--stage-count": stages.length,
+            height: `${stagedTimelineHeight}px`,
+          } as CSSProperties}
+        >
           <div className="timetable-axis" aria-hidden="true">
             {ticks.map((tick) => {
               const top = stagedTopPadding + (tick - timelineStart) * pixelsPerMinute;
@@ -335,7 +344,7 @@ export const ScheduleDayView = ({
               );
             })}
           </div>
-          {festivalStages.map((stage) => {
+          {stages.map((stage) => {
             const stageItems = visibleAttending.filter((item) => item.artist.stage === stage.id);
             return (
               <div key={stage.id} className="timetable-track">

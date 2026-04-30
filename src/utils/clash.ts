@@ -1,5 +1,6 @@
 import type { Artist, ClashPair, SetTimeMap, TightGapPair } from "../types";
-import { getEffectiveTime, getOverlapRange, minutesToTime, timeToMinutes } from "./time";
+import { getDaySortIndex } from "../data/lineup";
+import { getEffectiveTime, getOverlapRange, getTimeBounds, minutesToTime } from "./time";
 
 const DEFAULT_TIGHT_GAP_MINUTES = 10;
 
@@ -8,14 +9,13 @@ export const getClashDecisionId = (firstId: string, secondId: string) =>
 
 const getTimedBounds = (artist: Artist, setTimes: SetTimeMap) => {
   const time = getEffectiveTime(artist, setTimes);
-  const start = timeToMinutes(time.start);
-  const end = timeToMinutes(time.end);
+  const bounds = getTimeBounds(time);
 
-  if (start === undefined || end === undefined || end <= start) {
+  if (!bounds) {
     return undefined;
   }
 
-  return { start, end };
+  return bounds;
 };
 
 export const getClashesForArtist = (
@@ -64,7 +64,7 @@ export const getAllClashes = (artists: Artist[], setTimes: SetTimeMap): ClashPai
 
   return clashes.sort((a, b) => {
     if (a.day !== b.day) {
-      return a.day.localeCompare(b.day);
+      return getDaySortIndex(a.day) - getDaySortIndex(b.day);
     }
 
     return a.start.localeCompare(b.start);
@@ -122,7 +122,7 @@ export const getAllTightGaps = (
 
   return gaps.sort((a, b) => {
     if (a.day !== b.day) {
-      return a.day.localeCompare(b.day);
+      return getDaySortIndex(a.day) - getDaySortIndex(b.day);
     }
 
     if (a.betweenStart !== b.betweenStart) {

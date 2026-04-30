@@ -1,6 +1,6 @@
 import { AlertTriangle, Clock, ListFilter } from "lucide-react";
 import { useMemo, useState } from "react";
-import { festivalDays, getDay, getStage, lineup } from "../data/lineup";
+import { getDay, getFestivalDays, getLineup, getStage } from "../data/lineup";
 import type { Artist, ClashDecisionMap, IntentMap, SetTimeMap } from "../types";
 import { getAllClashes } from "../utils/clash";
 import { formatTimeRange, getEffectiveTime } from "../utils/time";
@@ -12,6 +12,7 @@ interface ClashViewProps {
   setTimes: SetTimeMap;
   clashDecisions: ClashDecisionMap;
   onClashDecisionChange: (clashId: string, artistId: string | undefined) => void;
+  includeDistrictX: boolean;
 }
 
 const ClashChoiceButtons = ({
@@ -53,18 +54,21 @@ export const ClashView = ({
   setTimes,
   clashDecisions,
   onClashDecisionChange,
+  includeDistrictX,
 }: ClashViewProps) => {
   const [scope, setScope] = useState<ClashScope>("mine");
+  const visibleDays = useMemo(() => getFestivalDays(includeDistrictX), [includeDistrictX]);
+  const visibleLineup = useMemo(() => getLineup(includeDistrictX), [includeDistrictX]);
 
   const scopedArtists = useMemo(() => {
-    return lineup.filter((artist) => {
+    return visibleLineup.filter((artist) => {
       if (scope === "definite") {
         return intents[artist.id] === "definite";
       }
 
       return Boolean(intents[artist.id]);
     });
-  }, [intents, scope]);
+  }, [intents, scope, visibleLineup]);
 
   const clashes = useMemo(() => getAllClashes(scopedArtists, setTimes), [scopedArtists, setTimes]);
 
@@ -91,7 +95,7 @@ export const ClashView = ({
         </div>
       ) : (
         <section className="clash-list">
-          {festivalDays.map((day) => {
+          {visibleDays.map((day) => {
             const dayClashes = clashes.filter((clash) => clash.day === day.id);
 
             if (dayClashes.length === 0) {

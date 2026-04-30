@@ -7,18 +7,48 @@ export const festival = {
   sourceUrl: "https://downloadfestival.co.uk/lineup/",
 };
 
-export const festivalDays: FestivalDay[] = [
+export const mainFestivalDays: FestivalDay[] = [
   { id: "friday", label: "Friday 12 June", shortLabel: "Fri", date: "2026-06-12" },
   { id: "saturday", label: "Saturday 13 June", shortLabel: "Sat", date: "2026-06-13" },
   { id: "sunday", label: "Sunday 14 June", shortLabel: "Sun", date: "2026-06-14" },
 ];
 
-export const festivalStages: FestivalStage[] = [
+export const districtXDays: FestivalDay[] = [
+  { id: "wednesday", label: "Wednesday 10 June", shortLabel: "Wed", date: "2026-06-10" },
+  { id: "thursday", label: "Thursday 11 June", shortLabel: "Thu", date: "2026-06-11" },
+];
+
+export const festivalDays: FestivalDay[] = [...mainFestivalDays];
+
+export const allFestivalDays: FestivalDay[] = [...districtXDays, ...mainFestivalDays];
+
+export const mainFestivalStages: FestivalStage[] = [
   { id: "apex", name: "Apex Stage", shortName: "Apex" },
   { id: "opus", name: "Opus Stage", shortName: "Opus" },
   { id: "avalanche", name: "The Avalanche Stage", shortName: "Avalanche" },
   { id: "dogtooth", name: "The Dogtooth Stage", shortName: "Dogtooth" },
 ];
+
+export const districtXStages: FestivalStage[] = [
+  { id: "district-den", name: "The Den (District X)", shortName: "The Den" },
+  { id: "district-doghouse", name: "The Doghouse (District X)", shortName: "Doghouse" },
+  { id: "district-ace-spades", name: "Ace of Spades (District X)", shortName: "Ace of Spades" },
+  { id: "rip-courtyard", name: "RIP Courtyard", shortName: "RIP Courtyard" },
+];
+
+export const festivalStages: FestivalStage[] = [...mainFestivalStages];
+
+export const allFestivalStages: FestivalStage[] = [...mainFestivalStages, ...districtXStages];
+
+export const getFestivalDays = (includeDistrictX = false) =>
+  includeDistrictX ? allFestivalDays : festivalDays;
+
+export const getFestivalStages = (includeDistrictX = false) =>
+  includeDistrictX ? allFestivalStages : festivalStages;
+
+export const daySortIndex = new Map(allFestivalDays.map((day, index) => [day.id, index]));
+
+export const getDaySortIndex = (id: DayId) => daySortIndex.get(id) ?? 999;
 
 const slugify = (value: string) =>
   value
@@ -202,13 +232,78 @@ export const lineup: Artist[] = [
     { name: "Private School", start: "11:45", end: "12:05", spotifyTrackIds: ["0Nig5iLfz3PGc2N1arz1j8", "144ItIFIWau6h80Glf6eUw", "6QysPkrizgWQRtZMYnkyfR", "5Who33byRO15WEPSuO83IM", "4O8btG65d0vfUcfkuPDj5w"] },
     { name: "Spitting Glass", start: "11:00", end: "11:20", spotifyTrackIds: ["3YljlwPWa7J7kxl1gm2NQL"] },
   ], 1200),
+  ...addArtists("saturday", "district-den", [
+    { name: "Master of Pop Hits", start: "01:30", end: "03:00" },
+  ], 1300),
+  ...addArtists("wednesday", "district-doghouse", [
+    { name: "40000 Leagues", start: "16:00", end: "16:25" },
+    { name: "Celavi", start: "16:40", end: "17:05" },
+    { name: "Pryma", start: "17:20", end: "17:50" },
+    { name: "DeadWax", start: "18:05", end: "18:40" },
+    { name: "RXPTRS", start: "18:55", end: "19:40" },
+    { name: "Black Water County", start: "20:00", end: "21:00" },
+  ], 1400),
+  ...addArtists("thursday", "district-doghouse", [
+    { name: "Electric Six", start: "16:30", end: "17:30" },
+    { name: "Famous First Words", start: "18:00", end: "20:30" },
+    { name: "Bat Sabbath", start: "21:00", end: "22:00" },
+    { name: "Five", start: "22:30", end: "23:00" },
+  ], 1500),
+  ...addArtists("friday", "district-doghouse", [
+    { name: "Black Parade", start: "22:00", end: "23:30" },
+  ], 1600),
+  ...addArtists("wednesday", "district-ace-spades", [
+    { name: "Silent Disco - Attitude Era vs Soundtrax", start: "23:00", end: "01:00" },
+    { name: "Silent Disco - Metalcore vs Hair Metal", start: "01:00", end: "03:00" },
+  ], 1700),
+  ...addArtists("thursday", "district-ace-spades", [
+    { name: "Silent Disco - Ozzy & Black Sabbath vs Back to the Beginning Bands", start: "23:30", end: "01:00" },
+    { name: "Silent Disco - Buffy vs Twilight", start: "01:00", end: "02:00" },
+    { name: "Silent Disco - Disney vs Dad Rock", start: "02:00", end: "03:00" },
+  ], 1800),
+  ...addArtists("friday", "district-ace-spades", [
+    { name: "Silent Disco - K-Pop vs Emo", start: "01:00", end: "03:00" },
+  ], 1900),
+  ...addArtists("saturday", "district-ace-spades", [
+    { name: "Silent Disco - System of a Down vs Slipknot", start: "23:00", end: "00:00" },
+    { name: "Silent Disco - Metallica vs AC/DC", start: "00:00", end: "01:00" },
+    { name: "Silent Disco - Avril vs Blink", start: "01:00", end: "02:00" },
+    { name: "Silent Disco - My Chemical Romance vs The Used", start: "02:00", end: "03:00" },
+  ], 2000),
+  ...addArtists("sunday", "district-ace-spades", [
+    { name: "Silent Disco - Football Anthems vs Power Anthems", start: "23:00", end: "01:00" },
+    { name: "Silent Disco - DL26 Pre-2000 vs DL26 Post-2000", start: "01:00", end: "03:00" },
+  ], 2100),
+  ...addArtists("wednesday", "rip-courtyard", [
+    { name: "Nephwrack", start: "15:45", end: "16:30" },
+    { name: "Cwfen", start: "17:00", end: "17:45" },
+    { name: "The Howling", start: "18:15", end: "19:00" },
+    { name: "Knives", start: "19:30", end: "20:15" },
+    { name: "Margarita Witch Cult", start: "20:45", end: "21:30" },
+    { name: "Split Dogs", start: "22:00", end: "23:00" },
+  ], 2200),
+  ...addArtists("thursday", "rip-courtyard", [
+    { name: "Outlander", start: "15:45", end: "16:30" },
+    { name: "Silo", start: "17:00", end: "17:45" },
+    { name: "Mallavora", start: "18:15", end: "19:00" },
+    { name: "Creeping Jean", start: "19:30", end: "20:15" },
+    { name: "Tropic Gold", start: "20:45", end: "21:30" },
+    { name: "Riding The Low", start: "22:00", end: "23:00" },
+  ], 2300),
 ];
+
+export const isDistrictXArtist = (artist: Artist) =>
+  districtXDays.some((day) => day.id === artist.day) ||
+  districtXStages.some((stage) => stage.id === artist.stage);
+
+export const getLineup = (includeDistrictX = false) =>
+  includeDistrictX ? lineup : lineup.filter((artist) => !isDistrictXArtist(artist));
 
 export const artistById = new Map(lineup.map((artist) => [artist.id, artist]));
 
-export const dayById = new Map(festivalDays.map((day) => [day.id, day]));
+export const dayById = new Map(allFestivalDays.map((day) => [day.id, day]));
 
-export const stageById = new Map(festivalStages.map((stage) => [stage.id, stage]));
+export const stageById = new Map(allFestivalStages.map((stage) => [stage.id, stage]));
 
 export const getArtistById = (id: string | undefined) => (id ? artistById.get(id) : undefined);
 

@@ -2,7 +2,7 @@ import { Timer } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { IntentButtons } from "../components/IntentButtons";
-import { festivalDays, lineup } from "../data/lineup";
+import { getFestivalDays, getLineup } from "../data/lineup";
 import type { ClashDecisionMap, Intent, IntentMap, SetTimeMap } from "../types";
 import { loadFreeTimeWindow, saveFreeTimeWindow } from "../utils/localStorage";
 import { buildScheduleDay, getDirectStageTransfers, getStageLabel, getStageTransferText } from "../utils/schedule";
@@ -13,10 +13,13 @@ interface FreeTimeProps {
   setTimes: SetTimeMap;
   clashDecisions: ClashDecisionMap;
   onIntentChange: (artistId: string, intent: Intent) => void;
+  includeDistrictX: boolean;
 }
 
-export const FreeTime = ({ intents, setTimes, clashDecisions, onIntentChange }: FreeTimeProps) => {
+export const FreeTime = ({ includeDistrictX, intents, setTimes, clashDecisions, onIntentChange }: FreeTimeProps) => {
   const [window, setWindow] = useState(() => loadFreeTimeWindow());
+  const visibleDays = useMemo(() => getFestivalDays(includeDistrictX), [includeDistrictX]);
+  const visibleLineup = useMemo(() => getLineup(includeDistrictX), [includeDistrictX]);
 
   useEffect(() => {
     saveFreeTimeWindow(window);
@@ -27,8 +30,8 @@ export const FreeTime = ({ intents, setTimes, clashDecisions, onIntentChange }: 
 
   const dayData = useMemo(
     () =>
-      festivalDays.map((day) => {
-        const pickedOnDay = lineup.filter((artist) => artist.day === day.id && Boolean(intents[artist.id]));
+      visibleDays.map((day) => {
+        const pickedOnDay = visibleLineup.filter((artist) => artist.day === day.id && Boolean(intents[artist.id]));
 
         return {
           day,
@@ -39,10 +42,12 @@ export const FreeTime = ({ intents, setTimes, clashDecisions, onIntentChange }: 
             clashDecisions,
             windowStartMins,
             windowEndMins,
+            undefined,
+            visibleLineup,
           ),
         };
       }),
-    [clashDecisions, intents, setTimes, windowEndMins, windowStartMins],
+    [clashDecisions, intents, setTimes, visibleDays, visibleLineup, windowEndMins, windowStartMins],
   );
 
   const totalGaps = dayData.reduce((sum, item) => sum + item.schedule.gaps.length, 0);

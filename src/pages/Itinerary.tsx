@@ -3,7 +3,7 @@ import { useMemo, useRef, useState } from "react";
 import { ItineraryViewControls, type ItineraryViewMode } from "../components/ItineraryViewControls";
 import { ScheduleDayView } from "../components/ScheduleDayView";
 import { TimetableView } from "../components/TimetableView";
-import { festivalDays, getDay, lineup } from "../data/lineup";
+import { getDay, getFestivalDays, getFestivalStages, getLineup } from "../data/lineup";
 import type { ClashDecisionMap, DayId, IntentMap, SetTimeMap } from "../types";
 import { downloadElementAsPng } from "../utils/imageExport";
 import { loadFreeTimeWindow, loadTimetableStages, saveTimetableStages } from "../utils/localStorage";
@@ -16,15 +16,19 @@ interface ItineraryProps {
   intents: IntentMap;
   setTimes: SetTimeMap;
   clashDecisions: ClashDecisionMap;
+  includeDistrictX: boolean;
 }
 
-export const Itinerary = ({ intents, setTimes, clashDecisions }: ItineraryProps) => {
+export const Itinerary = ({ includeDistrictX, intents, setTimes, clashDecisions }: ItineraryProps) => {
   const [viewMode, setViewMode] = useState<ItineraryViewMode>("list");
   const [dayFilter, setDayFilter] = useState<ItineraryDayFilter>("all");
   const [showStages, setShowStages] = useState(() => loadTimetableStages());
   const [freeTimeOnly, setFreeTimeOnly] = useState(false);
   const [exportState, setExportState] = useState<"idle" | "saving" | "error">("idle");
   const exportRef = useRef<HTMLDivElement>(null);
+  const availableDays = useMemo(() => getFestivalDays(includeDistrictX), [includeDistrictX]);
+  const visibleStages = useMemo(() => getFestivalStages(includeDistrictX), [includeDistrictX]);
+  const visibleLineup = useMemo(() => getLineup(includeDistrictX), [includeDistrictX]);
   const freeTimeWindow = useMemo(() => loadFreeTimeWindow(), []);
   const windowStartMins = timeToMinutes(freeTimeWindow.start) ?? 600;
   const windowEndMins = windowEndToMins(freeTimeWindow.end);
@@ -37,11 +41,11 @@ export const Itinerary = ({ intents, setTimes, clashDecisions }: ItineraryProps)
 
   const schedules = useMemo(
     () =>
-      festivalDays.map((day) => {
-        const pickedOnDay = lineup.filter((artist) => artist.day === day.id && Boolean(intents[artist.id]));
-        return buildScheduleDay(day.id, pickedOnDay, setTimes, clashDecisions, windowStartMins, windowEndMins);
+      availableDays.map((day) => {
+        const pickedOnDay = visibleLineup.filter((artist) => artist.day === day.id && Boolean(intents[artist.id]));
+        return buildScheduleDay(day.id, pickedOnDay, setTimes, clashDecisions, windowStartMins, windowEndMins, undefined, visibleLineup);
       }),
-    [clashDecisions, intents, setTimes, windowEndMins, windowStartMins],
+    [availableDays, clashDecisions, intents, setTimes, visibleLineup, windowEndMins, windowStartMins],
   );
 
   const visibleSchedules = useMemo(
@@ -50,8 +54,8 @@ export const Itinerary = ({ intents, setTimes, clashDecisions }: ItineraryProps)
   );
 
   const visibleDays = useMemo(
-    () => festivalDays.filter((d) => dayFilter === "all" || d.id === dayFilter),
-    [dayFilter],
+    () => availableDays.filter((d) => dayFilter === "all" || d.id === dayFilter),
+    [availableDays, dayFilter],
   );
 
   const exportItinerary = async () => {
@@ -63,6 +67,12 @@ export const Itinerary = ({ intents, setTimes, clashDecisions }: ItineraryProps)
     } catch {
       setExportState("error");
     }
+  };
+
+  const getStagesForDay = (dayId: DayId) => {
+    const stageIds = new Set(visibleLineup.filter((artist) => artist.day === dayId).map((artist) => artist.stage));
+    const stagesForDay = visibleStages.filter((stage) => stageIds.has(stage.id));
+    return stagesForDay.length > 0 ? stagesForDay : visibleStages;
   };
 
   return (
@@ -93,7 +103,7 @@ export const Itinerary = ({ intents, setTimes, clashDecisions }: ItineraryProps)
           >
             All
           </button>
-          {festivalDays.map((day) => (
+          {availableDays.map((day) => (
             <button
               key={day.id}
               type="button"
@@ -138,6 +148,8 @@ export const Itinerary = ({ intents, setTimes, clashDecisions }: ItineraryProps)
                   showStages={showStages}
                   hideUnpicked
                   freeTimeOnly={freeTimeOnly}
+                  artists={visibleLineup}
+                  stages={getStagesForDay(day.id as DayId)}
                   artistIds={schedules
                     .find((schedule) => schedule.dayId === day.id)
                     ?.attending.map((item) => item.artist.id)}
@@ -154,6 +166,7 @@ export const Itinerary = ({ intents, setTimes, clashDecisions }: ItineraryProps)
                 viewMode={viewMode === "vertical" ? "timetable" : "list"}
                 showStages={showStages}
                 freeTimeOnly={freeTimeOnly}
+                stages={getStagesForDay(schedule.dayId)}
               />
             ))}
       </div>

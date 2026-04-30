@@ -1,8 +1,8 @@
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { festivalStages, lineup } from "../data/lineup";
-import type { Artist, DayId, IntentMap, SetTimeMap } from "../types";
-import { getEffectiveTime, minutesToTime, timeToMinutes } from "../utils/time";
+import type { Artist, DayId, FestivalStage, IntentMap, SetTimeMap } from "../types";
+import { getEffectiveTime, getTimeBounds, minutesToTime } from "../utils/time";
 
 const HOUR_W = 180; // px per hour (45px per 15-min segment)
 const LABEL_W = 76; // px for stage label column
@@ -10,11 +10,7 @@ const ROW_H = 80; // px per stage row
 
 function toFestivalMins(artist: Artist, setTimes: SetTimeMap): { start: number; end: number } {
   const t = getEffectiveTime(artist, setTimes);
-  const start = timeToMinutes(t.start) ?? 10 * 60;
-  const rawEnd = timeToMinutes(t.end);
-  let end: number = rawEnd !== null && rawEnd !== undefined ? rawEnd : start + 60;
-  if (end <= start) end += 1440;
-  return { start, end };
+  return getTimeBounds(t) ?? { start: 10 * 60, end: 11 * 60 };
 }
 
 interface TimetableViewProps {
@@ -25,6 +21,8 @@ interface TimetableViewProps {
   hideUnpicked?: boolean;
   freeTimeOnly?: boolean;
   artistIds?: string[];
+  artists?: Artist[];
+  stages?: FestivalStage[];
   freeTimeGaps?: Array<{ start: number; end: number }>;
 }
 
@@ -36,14 +34,16 @@ export const TimetableView = ({
   hideUnpicked = false,
   freeTimeOnly = false,
   artistIds,
+  artists = lineup,
+  stages = festivalStages,
   freeTimeGaps,
 }: TimetableViewProps) => {
   const dayArtists = useMemo(() => {
-    const artists = lineup.filter((a) => a.day === day);
-    if (!artistIds) return artists;
+    const artistsForDay = artists.filter((a) => a.day === day);
+    if (!artistIds) return artistsForDay;
     const ids = new Set(artistIds);
-    return artists.filter((artist) => ids.has(artist.id));
-  }, [artistIds, day]);
+    return artistsForDay.filter((artist) => ids.has(artist.id));
+  }, [artistIds, artists, day]);
 
   // When freeTimeOnly, force single-lane so gaps are visible
   const effectiveShowStages = showStages && !freeTimeOnly;
@@ -89,6 +89,12 @@ export const TimetableView = ({
       .map((a) => ({ artist: a, ...toFestivalMins(a, setTimes) }))
       .sort((a, b) => a.start - b.start);
   }, [dayArtists, intents, setTimes]);
+
+  const dayStages = useMemo(() => {
+    const stageIds = new Set(dayArtists.map((artist) => artist.stage));
+    const matchingStages = stages.filter((stage) => stageIds.has(stage.id));
+    return matchingStages.length > 0 ? matchingStages : stages;
+  }, [dayArtists, stages]);
 
   // Gaps between consecutive picks (used in single-lane and FREE row)
   const pickedGaps = useMemo(() => {
@@ -198,7 +204,7 @@ export const TimetableView = ({
         {/* Rows */}
         {effectiveShowStages ? (
           <>
-            {festivalStages.map((stage) => {
+            {dayStages.map((stage) => {
               const artists = dayArtists.filter((a) => a.stage === stage.id);
               const visibleArtists = hideUnpicked ? artists.filter((a) => intents[a.id]) : artists;
               if (hideUnpicked && visibleArtists.length === 0) return null;

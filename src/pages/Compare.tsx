@@ -25,6 +25,7 @@ interface CompareProps {
   myGroupRole: GroupMemberRole;
   onRemoveGroupMember: (memberId: string) => Promise<void>;
   onSetGroupMemberRole: (memberId: string, role: "admin" | "member") => Promise<void>;
+  includeDistrictX: boolean;
 }
 
 export const Compare = (props: CompareProps) => <ComparisonView {...props} />;

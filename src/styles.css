@@ -224,6 +224,8 @@
   --teal: #28beb3;
   --blue: #6a95d8;
   --green: #75c46f;
+  --purple: #a879ff;
+  --pink: #e879b9;
   --shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
   --sticky-stage-top: 4.7rem;
   font-family:
@@ -385,6 +387,12 @@ p {
   background: rgba(255, 255, 255, 0.04);
   color: var(--text);
   padding: 0.65rem 0.85rem;
+}
+
+.district-toggle.is-active {
+  border-color: rgba(168, 121, 255, 0.72);
+  background: rgba(168, 121, 255, 0.16);
+  color: #eadfff;
 }
 
 .icon-button {
@@ -781,7 +789,7 @@ p {
 
 .stage-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
   gap: 0.85rem;
 }
 
@@ -984,6 +992,22 @@ p {
 
 .stage-dogtooth {
   border-left-color: var(--blue);
+}
+
+.stage-district-den {
+  border-left-color: var(--purple);
+}
+
+.stage-district-doghouse {
+  border-left-color: var(--pink);
+}
+
+.stage-district-ace-spades {
+  border-left-color: var(--green);
+}
+
+.stage-rip-courtyard {
+  border-left-color: var(--line-strong);
 }
 
 .empty-state {
@@ -2528,9 +2552,13 @@ input.is-error {
 .timetable-staged-col-header.stage-opus { border-left-color: var(--amber); }
 .timetable-staged-col-header.stage-avalanche { border-left-color: var(--teal); }
 .timetable-staged-col-header.stage-dogtooth { border-left-color: var(--blue); }
+.timetable-staged-col-header.stage-district-den { border-left-color: var(--purple); }
+.timetable-staged-col-header.stage-district-doghouse { border-left-color: var(--pink); }
+.timetable-staged-col-header.stage-district-ace-spades { border-left-color: var(--green); }
+.timetable-staged-col-header.stage-rip-courtyard { border-left-color: var(--line-strong); }
 
 .timetable--staged {
-  grid-template-columns: 4.5rem repeat(4, minmax(8rem, 1fr));
+  grid-template-columns: 4.5rem repeat(var(--stage-count, 4), minmax(8rem, 1fr));
   gap: 0;
   border-radius: 0;
   border: 0;
@@ -2626,7 +2654,7 @@ input.is-error {
   }
 
   .timetable--staged {
-    grid-template-columns: 3.2rem repeat(4, minmax(0, 1fr));
+    grid-template-columns: 3.2rem repeat(var(--stage-count, 4), minmax(0, 1fr));
     width: 100%;
     min-width: 0;
   }

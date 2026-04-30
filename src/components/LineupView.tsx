@@ -1,6 +1,6 @@
 import { Filter, Layers, LayoutGrid, Search, SlidersHorizontal, StretchHorizontal } from "lucide-react";
-import { useMemo, useState } from "react";
-import { festivalDays, festivalStages, lineup } from "../data/lineup";
+import { useEffect, useMemo, useState } from "react";
+import { getFestivalDays, getFestivalStages, getLineup } from "../data/lineup";
 import type { Artist, ArtistTightGap, DayId, Intent, IntentMap, SetTimeMap, StageId } from "../types";
 import { getAllClashes, getAllTightGaps } from "../utils/clash";
 import { loadTimetableStages, loadViewMode, saveTimetableStages, saveViewMode } from "../utils/localStorage";
@@ -16,6 +16,7 @@ interface LineupViewProps {
   intents: IntentMap;
   setTimes: SetTimeMap;
   onIntentChange: (artistId: string, intent: Intent) => void;
+  includeDistrictX: boolean;
 }
 
 const artistMatchesStatus = (artist: Artist, intents: IntentMap, status: StatusFilter) => {
@@ -30,7 +31,10 @@ const artistMatchesStatus = (artist: Artist, intents: IntentMap, status: StatusF
   return intents[artist.id] === status;
 };
 
-export const LineupView = ({ intents, onIntentChange, setTimes }: LineupViewProps) => {
+export const LineupView = ({ includeDistrictX, intents, onIntentChange, setTimes }: LineupViewProps) => {
+  const visibleDays = useMemo(() => getFestivalDays(includeDistrictX), [includeDistrictX]);
+  const visibleStages = useMemo(() => getFestivalStages(includeDistrictX), [includeDistrictX]);
+  const visibleLineup = useMemo(() => getLineup(includeDistrictX), [includeDistrictX]);
   const [dayFilter, setDayFilter] = useState<DayFilter>("all");
   const [stageFilter, setStageFilter] = useState<StageFilter>("all");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
@@ -38,8 +42,18 @@ export const LineupView = ({ intents, onIntentChange, setTimes }: LineupViewProp
   const [viewMode, setViewMode] = useState<"grid" | "timetable">(() => loadViewMode());
   const [showStages, setShowStages] = useState(() => loadTimetableStages());
 
+  useEffect(() => {
+    if (dayFilter !== "all" && !visibleDays.some((day) => day.id === dayFilter)) {
+      setDayFilter("all");
+    }
+
+    if (stageFilter !== "all" && !visibleStages.some((stage) => stage.id === stageFilter)) {
+      setStageFilter("all");
+    }
+  }, [dayFilter, stageFilter, visibleDays, visibleStages]);
+
   const switchToTimetable = () => {
-    if (dayFilter === "all") setDayFilter(festivalDays[0].id);
+    if (dayFilter === "all") setDayFilter(visibleDays[0].id);
     setViewMode("timetable");
     saveViewMode("timetable");
   };
@@ -56,11 +70,11 @@ export const LineupView = ({ intents, onIntentChange, setTimes }: LineupViewProp
   };
 
   // In timetable mode, always pick one day
-  const timetableDay = (dayFilter === "all" ? festivalDays[0].id : dayFilter) as DayId;
+  const timetableDay = (dayFilter === "all" ? visibleDays[0].id : dayFilter) as DayId;
 
   const selectedArtists = useMemo(
-    () => lineup.filter((artist) => Boolean(intents[artist.id])),
-    [intents],
+    () => visibleLineup.filter((artist) => Boolean(intents[artist.id])),
+    [intents, visibleLineup],
   );
 
   const clashMap = useMemo(() => {
@@ -92,7 +106,7 @@ export const LineupView = ({ intents, onIntentChange, setTimes }: LineupViewProp
   const visibleArtists = useMemo(() => {
     const query = search.trim().toLowerCase();
 
-    return lineup.filter((artist) => {
+    return visibleLineup.filter((artist) => {
       if (dayFilter !== "all" && artist.day !== dayFilter) {
         return false;
       }
@@ -107,15 +121,15 @@ export const LineupView = ({ intents, onIntentChange, setTimes }: LineupViewProp
 
       return !query || artist.name.toLowerCase().includes(query);
     });
-  }, [dayFilter, intents, search, stageFilter, statusFilter]);
+  }, [dayFilter, intents, search, stageFilter, statusFilter, visibleLineup]);
 
   const totals = useMemo(() => {
-    const selected = Object.keys(intents).length;
-    const definite = Object.values(intents).filter((intent) => intent === "definite").length;
+    const selected = visibleLineup.filter((artist) => Boolean(intents[artist.id])).length;
+    const definite = visibleLineup.filter((artist) => intents[artist.id] === "definite").length;
     const clashingSelections = Array.from(clashMap.entries()).filter(([artistId]) => intents[artistId]).length;
 
     return { selected, definite, clashingSelections };
-  }, [clashMap, intents]);
+  }, [clashMap, intents, visibleLineup]);
 
   return (
     <main className="page-shell">
@@ -174,7 +188,7 @@ export const LineupView = ({ intents, onIntentChange, setTimes }: LineupViewProp
           >
             All
           </button>
-          {festivalDays.map((day) => (
+          {visibleDays.map((day) => (
             <button
               key={day.id}
               type="button"
@@ -200,7 +214,7 @@ export const LineupView = ({ intents, onIntentChange, setTimes }: LineupViewProp
           <Filter size={18} />
           <select value={stageFilter} onChange={(event) => setStageFilter(event.target.value as StageFilter)}>
             <option value="all">All stages</option>
-            {festivalStages.map((stage) => (
+            {visibleStages.map((stage) => (
               <option key={stage.id} value={stage.id}>{stage.shortName}</option>
             ))}
           </select>
@@ -223,11 +237,13 @@ export const LineupView = ({ intents, onIntentChange, setTimes }: LineupViewProp
           intents={intents}
           setTimes={setTimes}
           showStages={showStages}
+          artists={visibleLineup}
+          stages={visibleStages}
         />
       )}
 
       {viewMode === "grid" && <section className="lineup-section">
-        {festivalDays
+        {visibleDays
           .filter((day) => dayFilter === "all" || day.id === dayFilter)
           .map((day) => {
             const dayArtists = visibleArtists.filter((artist) => artist.day === day.id);
@@ -244,7 +260,7 @@ export const LineupView = ({ intents, onIntentChange, setTimes }: LineupViewProp
                 </div>
 
                 <div className="stage-grid">
-                  {festivalStages
+                  {visibleStages
                     .filter((stage) => stageFilter === "all" || stage.id === stageFilter)
                     .map((stage) => {
                       const stageArtists = dayArtists

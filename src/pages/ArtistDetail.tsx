@@ -2,7 +2,7 @@ import { ArrowLeft, AlertTriangle, Clock3 } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { IntentButtons } from "../components/IntentButtons";
 import { SpotifyPanel } from "../components/SpotifyPanel";
-import { getArtistById, getDay, getStage, lineup } from "../data/lineup";
+import { getArtistById, getDay, getLineup, getStage } from "../data/lineup";
 import type { Intent, IntentMap, SetTimeMap } from "../types";
 import { getAllTightGaps, getClashesForArtist } from "../utils/clash";
 import { formatTimeRange, getEffectiveTime } from "../utils/time";
@@ -11,10 +11,12 @@ interface ArtistDetailProps {
   intents: IntentMap;
   setTimes: SetTimeMap;
   onIntentChange: (artistId: string, intent: Intent) => void;
+  includeDistrictX: boolean;
 }
 
 export const ArtistDetail = ({
   intents,
+  includeDistrictX,
   onIntentChange,
   setTimes,
 }: ArtistDetailProps) => {
@@ -38,7 +40,7 @@ export const ArtistDetail = ({
   const day = getDay(artist.day);
   const stage = getStage(artist.stage);
   const time = getEffectiveTime(artist, setTimes);
-  const selectedArtists = lineup.filter((lineupArtist) => Boolean(intents[lineupArtist.id]));
+  const selectedArtists = getLineup(includeDistrictX).filter((lineupArtist) => Boolean(intents[lineupArtist.id]));
   const clashes = intents[artist.id] ? getClashesForArtist(artist, selectedArtists, setTimes) : [];
   const tightGaps = intents[artist.id]
     ? getAllTightGaps(selectedArtists, setTimes).filter(

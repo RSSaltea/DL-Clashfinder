@@ -4,7 +4,7 @@ import { HashRouter, NavLink, Route, Routes, useLocation } from "react-router-do
 import { AuthDialog } from "./components/AuthDialog";
 import { festival } from "./data/lineup";
 import { useFestivalState } from "./hooks/useFestivalState";
-import { loadTheme, saveTheme } from "./utils/localStorage";
+import { loadDistrictXEnabled, loadTheme, saveDistrictXEnabled, saveTheme } from "./utils/localStorage";
 import { ArtistDetail } from "./pages/ArtistDetail";
 import { Clashes } from "./pages/Clashes";
 import { Compare } from "./pages/Compare";
@@ -32,6 +32,7 @@ const AppRoutes = () => {
     document.documentElement.setAttribute("data-theme", t);
     return t;
   });
+  const [includeDistrictX, setIncludeDistrictX] = useState(() => loadDistrictXEnabled());
   const festivalState = useFestivalState();
 
   const closeMenu = () => setMobileMenuOpen(false);
@@ -41,6 +42,14 @@ const AppRoutes = () => {
     setTheme(next);
     saveTheme(next);
     document.documentElement.setAttribute("data-theme", next);
+  };
+
+  const toggleDistrictX = () => {
+    setIncludeDistrictX((current) => {
+      const next = !current;
+      saveDistrictXEnabled(next);
+      return next;
+    });
   };
 
   return (
@@ -90,6 +99,15 @@ const AppRoutes = () => {
             <span>Group Itinerary</span>
           </NavLink>
           <button
+            className={`secondary-button district-toggle${includeDistrictX ? " is-active" : ""}`}
+            type="button"
+            onClick={toggleDistrictX}
+            aria-pressed={includeDistrictX}
+            title={includeDistrictX ? "Hide District X" : "Show District X"}
+          >
+            District X
+          </button>
+          <button
             className="icon-button theme-toggle"
             onClick={toggleTheme}
             aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
@@ -117,6 +135,7 @@ const AppRoutes = () => {
               intents={festivalState.intents}
               onIntentChange={festivalState.setArtistIntent}
               setTimes={festivalState.setTimes}
+              includeDistrictX={includeDistrictX}
             />
           }
         />
@@ -127,6 +146,7 @@ const AppRoutes = () => {
               intents={festivalState.intents}
               onIntentChange={festivalState.setArtistIntent}
               setTimes={festivalState.setTimes}
+              includeDistrictX={includeDistrictX}
             />
           }
         />
@@ -138,6 +158,7 @@ const AppRoutes = () => {
               setTimes={festivalState.setTimes}
               clashDecisions={festivalState.clashDecisions}
               onIntentChange={festivalState.setArtistIntent}
+              includeDistrictX={includeDistrictX}
             />
           }
         />
@@ -148,6 +169,7 @@ const AppRoutes = () => {
               intents={festivalState.intents}
               setTimes={festivalState.setTimes}
               clashDecisions={festivalState.clashDecisions}
+              includeDistrictX={includeDistrictX}
             />
           }
         />
@@ -159,6 +181,7 @@ const AppRoutes = () => {
               setTimes={festivalState.setTimes}
               clashDecisions={festivalState.clashDecisions}
               onClashDecisionChange={festivalState.setClashDecision}
+              includeDistrictX={includeDistrictX}
             />
           }
         />
@@ -188,6 +211,7 @@ const AppRoutes = () => {
               myGroupRole={festivalState.myGroupRole}
               onRemoveGroupMember={festivalState.removeGroupMember}
               onSetGroupMemberRole={festivalState.setGroupMemberRole}
+              includeDistrictX={includeDistrictX}
             />
           }
         />
@@ -203,6 +227,7 @@ const AppRoutes = () => {
               syncedImports={festivalState.syncedImports}
               groupClashVotes={festivalState.groupClashVotes}
               groupCode={festivalState.groupCode}
+              includeDistrictX={includeDistrictX}
             />
           }
         />

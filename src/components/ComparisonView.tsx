@@ -1,6 +1,6 @@
 import { Cloud, Crown, Download, FileJson, RefreshCw, Shield, Trash2, Upload, UserMinus } from "lucide-react";
 import { ChangeEvent, KeyboardEvent, useMemo, useState } from "react";
-import { festivalDays } from "../data/lineup";
+import { getDaySortIndex, getFestivalDays, getLineup } from "../data/lineup";
 import type { Artist, ClashDecisionMap, FestivalExport, IntentMap, ProfilePlan, SetTimeMap } from "../types";
 import { createExportPayload, downloadJson } from "../utils/export";
 import type { GroupMemberInfo, GroupMemberRole, GroupSyncState } from "../utils/groupSync";
@@ -40,6 +40,7 @@ interface ComparisonViewProps {
   myGroupRole: GroupMemberRole;
   onRemoveGroupMember: (memberId: string) => Promise<void>;
   onSetGroupMemberRole: (memberId: string, role: "admin" | "member") => Promise<void>;
+  includeDistrictX: boolean;
 }
 
 interface GroupRow {
@@ -51,7 +52,7 @@ interface GroupRow {
 const sortArtists = (artists: Artist[]) =>
   [...artists].sort((a, b) => {
     if (a.day !== b.day) {
-      return a.day.localeCompare(b.day);
+      return getDaySortIndex(a.day) - getDaySortIndex(b.day);
     }
 
     return a.order - b.order;
@@ -82,6 +83,7 @@ export const ComparisonView = ({
   myGroupRole,
   onRemoveGroupMember,
   onSetGroupMemberRole,
+  includeDistrictX,
 }: ComparisonViewProps) => {
   const [error, setError] = useState("");
   const [memberActionError, setMemberActionError] = useState("");
@@ -120,6 +122,8 @@ export const ComparisonView = ({
   };
 
   const freeTimeWindow = useMemo(() => loadFreeTimeWindow(), []);
+  const visibleDays = useMemo(() => getFestivalDays(includeDistrictX), [includeDistrictX]);
+  const visibleLineup = useMemo(() => getLineup(includeDistrictX), [includeDistrictX]);
   const windowStartMins = timeToMinutes(freeTimeWindow.start) ?? 600;
   const windowEndMins = windowEndToMins(freeTimeWindow.end);
 
@@ -158,7 +162,7 @@ export const ComparisonView = ({
   const groupRows = useMemo<GroupRow[]>(() => {
     return Array.from(supportMap.entries())
       .map(([artistId, support]) => {
-        const artist = getGroupArtists(profiles).find((candidate) => candidate.id === artistId);
+        const artist = getGroupArtists(profiles, undefined, visibleLineup).find((candidate) => candidate.id === artistId);
 
         if (!artist) {
           return undefined;
@@ -182,7 +186,7 @@ export const ComparisonView = ({
 
         return a.artist.order - b.artist.order;
       });
-  }, [profiles, supportMap]);
+  }, [profiles, supportMap, visibleLineup]);
 
   const mutualWithMe = useMemo(() => {
     const localSelected = new Set(Object.keys(profiles[0].intents));
@@ -211,19 +215,20 @@ export const ComparisonView = ({
 
   const groupFreeTimeData = useMemo(
     () =>
-      festivalDays.map((day) => ({
+      visibleDays.map((day) => ({
         day,
         schedule: buildScheduleDay(
           day.id,
-          getGroupArtists(profiles, day.id),
+          getGroupArtists(profiles, day.id, visibleLineup),
           combinedSetTimes,
           groupDecisionMap,
           windowStartMins,
           windowEndMins,
           supportMap,
+          visibleLineup,
         ),
       })),
-    [combinedSetTimes, groupDecisionMap, profiles, supportMap, windowEndMins, windowStartMins],
+    [combinedSetTimes, groupDecisionMap, profiles, supportMap, visibleDays, visibleLineup, windowEndMins, windowStartMins],
   );
 
   const handleImport = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -510,7 +515,7 @@ export const ComparisonView = ({
                     <>
                       <div className="clash-card__time">
                         <strong>{clash.start} to {clash.end}</strong>
-                        <span>{festivalDays.find((day) => day.id === clash.first.day)?.shortLabel}</span>
+                        <span>{visibleDays.find((day) => day.id === clash.first.day)?.shortLabel}</span>
                       </div>
                       <div className="versus-row">
                         {[clash.first, clash.second].map((artist) => {
