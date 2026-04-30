@@ -101,11 +101,15 @@ const AppRoutes = () => {
           <button
             className={`secondary-button district-toggle${includeDistrictX ? " is-active" : ""}`}
             type="button"
-            onClick={toggleDistrictX}
+            onClick={() => {
+              toggleDistrictX();
+              closeMenu();
+            }}
             aria-pressed={includeDistrictX}
             title={includeDistrictX ? "Hide District X" : "Show District X"}
           >
-            District X
+            <Map size={18} />
+            <span>District X</span>
           </button>
           <button
             className="icon-button theme-toggle"

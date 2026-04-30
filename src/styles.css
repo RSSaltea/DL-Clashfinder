@@ -32,11 +32,13 @@
   filter: none;
 }
 
-[data-theme="light"] .app-nav a {
+[data-theme="light"] .app-nav a,
+[data-theme="light"] .app-nav .district-toggle {
   color: var(--muted);
 }
 
-[data-theme="light"] .app-nav a.active {
+[data-theme="light"] .app-nav a.active,
+[data-theme="light"] .app-nav .district-toggle.is-active {
   background: rgba(242, 162, 58, 0.15);
 }
 
@@ -339,6 +341,7 @@ p {
 }
 
 .app-nav a,
+.app-nav .district-toggle,
 .primary-button,
 .secondary-button,
 .icon-text-button {
@@ -357,12 +360,15 @@ p {
     transform 150ms ease;
 }
 
-.app-nav a {
+.app-nav a,
+.app-nav .district-toggle {
   padding: 0.55rem 0.75rem;
   color: var(--muted);
+  font: inherit;
 }
 
-.app-nav a.active {
+.app-nav a.active,
+.app-nav .district-toggle.is-active {
   border-color: rgba(242, 162, 58, 0.7);
   background: rgba(242, 162, 58, 0.1);
   color: var(--text);
@@ -389,12 +395,6 @@ p {
   padding: 0.65rem 0.85rem;
 }
 
-.district-toggle.is-active {
-  border-color: rgba(168, 121, 255, 0.72);
-  background: rgba(168, 121, 255, 0.16);
-  color: #eadfff;
-}
-
 .icon-button {
   display: inline-grid;
   width: 2.25rem;
@@ -410,7 +410,8 @@ p {
 .secondary-button:hover,
 .icon-text-button:hover,
 .icon-button:hover,
-.app-nav a:hover {
+.app-nav a:hover,
+.app-nav .district-toggle:hover {
   transform: translateY(-1px);
   border-color: var(--amber);
 }
@@ -663,21 +664,26 @@ p {
 }
 
 .segmented-control {
-  display: inline-grid;
-  grid-template-columns: repeat(4, 1fr);
+  display: inline-flex;
+  flex-wrap: nowrap;
   min-width: min(100%, 20rem);
+  max-width: 100%;
   border: 1px solid var(--line);
   border-radius: 8px;
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
 }
 
 .segmented-control button {
+  flex: 1 0 3.45rem;
   min-height: 2.65rem;
   border: 0;
   border-right: 1px solid var(--line);
   background: transparent;
   color: var(--muted);
   cursor: pointer;
+  white-space: nowrap;
 }
 
 .segmented-control button:last-child {
@@ -1885,7 +1891,8 @@ p {
     display: flex;
   }
 
-  .app-nav a {
+  .app-nav a,
+  .app-nav .district-toggle {
     width: 100%;
     justify-content: flex-start;
     padding: 0.65rem 0.85rem;
