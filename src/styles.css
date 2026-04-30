@@ -1096,6 +1096,119 @@ p {
   text-align: right;
 }
 
+.planned-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.planned-panel {
+  display: grid;
+  align-content: start;
+  gap: 0.85rem;
+}
+
+.planned-panel__top {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.planned-panel__top p {
+  color: var(--muted);
+  margin-top: 0.2rem;
+}
+
+.planned-panel__top > strong {
+  display: grid;
+  place-items: center;
+  min-width: 2.4rem;
+  height: 2.4rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.2);
+  color: var(--amber);
+}
+
+.planned-list {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.planned-row {
+  display: grid;
+  grid-template-columns: minmax(6.4rem, 0.22fr) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.8rem;
+  min-height: 4.1rem;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-left: 4px solid var(--line-strong);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 0.7rem;
+}
+
+.planned-row__time,
+.planned-row__main {
+  display: grid;
+  min-width: 0;
+  gap: 0.16rem;
+}
+
+.planned-row__time strong {
+  color: var(--amber);
+  text-transform: uppercase;
+}
+
+.planned-row__time span,
+.planned-row__main p,
+.planned-row__main h3 span {
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.planned-row__main h3 {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  min-width: 0;
+}
+
+.planned-row__main h3 > span {
+  font-weight: 500;
+}
+
+.planned-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  min-height: 2rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.32rem 0.55rem;
+  color: var(--muted);
+  font-size: 0.86rem;
+  white-space: nowrap;
+}
+
+.planned-badge--interested {
+  border-color: rgba(229, 72, 57, 0.42);
+  color: #ffd1ca;
+}
+
+.planned-badge--definite {
+  border-color: rgba(117, 196, 111, 0.42);
+  color: #cdf6c9;
+}
+
+.planned-badge--group {
+  border-color: rgba(231, 178, 74, 0.42);
+  color: #ffe2a6;
+}
+
 .clash-card {
   display: grid;
   gap: 0.85rem;
@@ -2014,6 +2127,7 @@ p {
   .stage-grid,
   .comparison-grid,
   .detail-grid,
+  .planned-grid,
   .versus-row,
   .gap-mini-grid,
   .itinerary-item {
@@ -2041,6 +2155,15 @@ p {
 
   .compact-list span {
     text-align: left;
+  }
+
+  .planned-row {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+
+  .planned-badge {
+    justify-self: start;
   }
 }
 

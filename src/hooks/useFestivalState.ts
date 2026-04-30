@@ -98,55 +98,21 @@ const hasAccountPlanContent = (plan: AccountPlan | null | undefined) =>
     plan.groupCode
   ));
 
-const mergeGroupFreeTimeNoteMaps = (
-  remote: GroupFreeTimeNoteMap = {},
-  local: GroupFreeTimeNoteMap = {},
-): GroupFreeTimeNoteMap => {
-  const groupCodes = new Set([...Object.keys(remote), ...Object.keys(local)]);
-  const merged: GroupFreeTimeNoteMap = {};
-
-  groupCodes.forEach((code) => {
-    merged[code] = {
-      ...(remote[code] ?? {}),
-      ...(local[code] ?? {}),
-    };
-  });
-
-  return merged;
-};
-
 const mergeAccountPlans = (remotePlan: AccountPlan | null, localPlan: AccountPlan): AccountPlan => {
   const remote = remotePlan ?? emptyAccountPlan(localPlan.profileName);
 
   return {
     version: 1,
     profileName: localPlan.profileName || remote.profileName || "Me",
-    intents: {
-      ...(remote.intents ?? {}),
-      ...(localPlan.intents ?? {}),
-    },
-    imports: (localPlan.imports ?? []).length > 0 ? localPlan.imports : remote.imports ?? [],
-    clashDecisions: {
-      ...(remote.clashDecisions ?? {}),
-      ...(localPlan.clashDecisions ?? {}),
-    },
-    groupClashVotesByCode: {
-      ...(remote.groupClashVotesByCode ?? {}),
-      ...(localPlan.groupClashVotesByCode ?? {}),
-    },
-    freeTimeNotes: {
-      ...(remote.freeTimeNotes ?? {}),
-      ...(localPlan.freeTimeNotes ?? {}),
-    },
-    groupFreeTimeNotesByCode: mergeGroupFreeTimeNoteMaps(
-      remote.groupFreeTimeNotesByCode ?? {},
-      localPlan.groupFreeTimeNotesByCode ?? {},
-    ),
-    groupCode: localPlan.groupCode || remote.groupCode || "",
+    intents: localPlan.intents ?? {},
+    imports: localPlan.imports ?? [],
+    clashDecisions: localPlan.clashDecisions ?? {},
+    groupClashVotesByCode: localPlan.groupClashVotesByCode ?? {},
+    freeTimeNotes: localPlan.freeTimeNotes ?? {},
+    groupFreeTimeNotesByCode: localPlan.groupFreeTimeNotesByCode ?? {},
+    groupCode: localPlan.groupCode ?? "",
     groupCodes: Array.from(new Set([
-      ...(remote.groupCodes ?? []),
       ...(localPlan.groupCodes ?? []),
-      remote.groupCode,
       localPlan.groupCode,
     ].filter(Boolean))),
   };
@@ -435,9 +401,9 @@ export const useFestivalState = () => {
   const setFreeTimeNote = (noteKey: string, value: string) => {
     setFreeTimeNotes((current) => {
       const next = { ...current };
-      const note = value.trim();
+      const note = value;
 
-      if (note) {
+      if (note.length > 0) {
         next[noteKey] = note;
       } else {
         delete next[noteKey];
@@ -454,9 +420,9 @@ export const useFestivalState = () => {
 
     setGroupFreeTimeNotesByCode((current) => {
       const nextNotes = { ...(current[groupCode] ?? {}) };
-      const note = value.trim();
+      const note = value;
 
-      if (note) {
+      if (note.length > 0) {
         nextNotes[noteKey] = note;
       } else {
         delete nextNotes[noteKey];

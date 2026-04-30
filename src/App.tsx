@@ -1,4 +1,4 @@
-import { AlertTriangle, CalendarDays, ExternalLink, Map, Menu, Moon, Route as RouteIcon, Sun, Timer, UsersRound, X } from "lucide-react";
+import { AlertTriangle, CalendarDays, ExternalLink, ListChecks, Map, Menu, Moon, Route as RouteIcon, Sun, Timer, UsersRound, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { HashRouter, NavLink, Route, Routes, useLocation } from "react-router-dom";
 import { AuthDialog } from "./components/AuthDialog";
@@ -12,6 +12,7 @@ import { FreeTime } from "./pages/FreeTime";
 import { GroupItinerary } from "./pages/GroupItinerary";
 import { Home } from "./pages/Home";
 import { Itinerary } from "./pages/Itinerary";
+import { PlanList } from "./pages/PlanList";
 
 const ScrollToTop = () => {
   const location = useLocation();
@@ -97,6 +98,10 @@ const AppRoutes = () => {
           <NavLink to="/group-itinerary" onClick={closeMenu}>
             <RouteIcon size={18} />
             <span>Group Itinerary</span>
+          </NavLink>
+          <NavLink to="/plan-list" onClick={closeMenu}>
+            <ListChecks size={18} />
+            <span>Plan List</span>
           </NavLink>
           <button
             className={`secondary-button district-toggle${includeDistrictX ? " is-active" : ""}`}
@@ -245,6 +250,24 @@ const AppRoutes = () => {
               myGroupRole={festivalState.myGroupRole}
               groupFreeTimeNotes={festivalState.groupFreeTimeNotes}
               onGroupFreeTimeNoteChange={festivalState.setGroupFreeTimeNote}
+              includeDistrictX={includeDistrictX}
+            />
+          }
+        />
+        <Route
+          path="/plan-list"
+          element={
+            <PlanList
+              intents={festivalState.intents}
+              profileName={festivalState.profileName}
+              accountUsername={festivalState.account?.username}
+              setTimes={festivalState.setTimes}
+              clashDecisions={festivalState.clashDecisions}
+              imports={festivalState.imports}
+              syncedImports={festivalState.syncedImports}
+              groupClashVotes={festivalState.groupClashVotes}
+              groupCode={festivalState.groupCode}
+              myGroupRole={festivalState.myGroupRole}
               includeDistrictX={includeDistrictX}
             />
           }
