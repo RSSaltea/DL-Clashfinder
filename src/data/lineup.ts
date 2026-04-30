@@ -33,6 +33,7 @@ export const districtXStages: FestivalStage[] = [
   { id: "district-den", name: "The Den (District X)", shortName: "The Den" },
   { id: "district-doghouse", name: "The Doghouse (District X)", shortName: "Doghouse" },
   { id: "district-ace-spades", name: "Ace of Spades (District X)", shortName: "Ace of Spades" },
+  { id: "district-outpost", name: "The Outpost (District X)", shortName: "Outpost" },
   { id: "rip-courtyard", name: "RIP Courtyard", shortName: "RIP Courtyard" },
 ];
 
@@ -79,12 +80,26 @@ const addArtists = (
   stage: StageId,
   entries: LineupArtistInput[],
   startOrder: number,
-): Artist[] =>
-  entries.map((entry, index) => {
-    const details = typeof entry === "string" ? { name: entry } : entry;
+): Artist[] => {
+  const normalizedEntries = entries.map((entry) => (typeof entry === "string" ? { name: entry } : entry));
+  const slugCounts = new Map<string, number>();
+
+  normalizedEntries.forEach((entry) => {
+    const slug = slugify(entry.name);
+    slugCounts.set(slug, (slugCounts.get(slug) ?? 0) + 1);
+  });
+
+  const seenSlugs = new Map<string, number>();
+
+  return normalizedEntries.map((details, index) => {
+    const baseSlug = slugify(details.name);
+    const seenCount = seenSlugs.get(baseSlug) ?? 0;
+    seenSlugs.set(baseSlug, seenCount + 1);
+    const needsSuffix = (slugCounts.get(baseSlug) ?? 0) > 1;
+    const suffix = needsSuffix ? `-${slugify(`${details.start ?? seenCount + 1}-${details.end ?? ""}`)}` : "";
 
     return {
-      id: `${day}-${stage}-${slugify(details.name)}`,
+      id: `${day}-${stage}-${baseSlug}${suffix}`,
       name: details.name,
       day,
       stage,
@@ -95,6 +110,7 @@ const addArtists = (
       spotifyTrackIds: details.spotifyTrackIds,
     };
   });
+};
 
 export const lineup: Artist[] = [
   ...addArtists("friday", "apex", [
@@ -232,48 +248,187 @@ export const lineup: Artist[] = [
     { name: "Private School", start: "11:45", end: "12:05", spotifyTrackIds: ["0Nig5iLfz3PGc2N1arz1j8", "144ItIFIWau6h80Glf6eUw", "6QysPkrizgWQRtZMYnkyfR", "5Who33byRO15WEPSuO83IM", "4O8btG65d0vfUcfkuPDj5w"] },
     { name: "Spitting Glass", start: "11:00", end: "11:20", spotifyTrackIds: ["3YljlwPWa7J7kxl1gm2NQL"] },
   ], 1200),
-  ...addArtists("saturday", "district-den", [
-    { name: "Master of Pop Hits", start: "01:30", end: "03:00" },
-  ], 1300),
   ...addArtists("wednesday", "district-doghouse", [
     { name: "40000 Leagues", start: "16:00", end: "16:25" },
-    { name: "Celavi", start: "16:40", end: "17:05" },
-    { name: "Pryma", start: "17:20", end: "17:50" },
-    { name: "DeadWax", start: "18:05", end: "18:40" },
-    { name: "RXPTRS", start: "18:55", end: "19:40" },
-    { name: "Black Water County", start: "20:00", end: "21:00" },
-  ], 1400),
+    { name: "Celavi", start: "16:30", end: "16:55" },
+    { name: "Pryma", start: "17:05", end: "17:35" },
+    { name: "DeadWax", start: "17:45", end: "18:20" },
+    { name: "RXPTRS", start: "18:30", end: "19:15" },
+    { name: "Black Water County", start: "19:25", end: "20:25" },
+    { name: "Tasmin Taylor", start: "20:30", end: "21:00" },
+    { name: "Andrew O'Neill: A History Of Punk", start: "21:00", end: "22:00" },
+    { name: "Tasmin Taylor", start: "22:00", end: "22:30" },
+    { name: "Nic Cage Against The Machine", start: "22:30", end: "23:00" },
+    { name: "Tasmin Taylor", start: "23:00", end: "00:00" },
+    { name: "STVW", start: "00:00", end: "02:00" },
+    { name: "Savannah", start: "02:00", end: "03:00" },
+  ], 1300),
   ...addArtists("thursday", "district-doghouse", [
+    { name: "RockFit", start: "10:00", end: "11:00" },
+    { name: "Kyden Fire", start: "12:00", end: "13:00" },
+    { name: "Heavy Metal Sports", start: "13:00", end: "14:30" },
+    { name: "Kyden Fire", start: "14:30", end: "15:00" },
+    { name: "James B. Partridge's Primary School Bangers", start: "15:00", end: "16:00" },
+    { name: "Kyden Fire", start: "16:00", end: "16:30" },
     { name: "Electric Six", start: "16:30", end: "17:30" },
+    { name: "Kyden Fire", start: "17:30", end: "18:00" },
     { name: "Famous First Words", start: "18:00", end: "20:30" },
+    { name: "Kyden Fire", start: "20:30", end: "21:00" },
     { name: "Bat Sabbath", start: "21:00", end: "22:00" },
+    { name: "Kyden Fire", start: "22:00", end: "22:30" },
     { name: "Five", start: "22:30", end: "23:00" },
-  ], 1500),
+    { name: "Kyden Fire", start: "23:00", end: "23:30" },
+    { name: "Heavy Metal Time Machine", start: "23:30", end: "02:00" },
+    { name: "Nickelbrat", start: "02:00", end: "03:00" },
+  ], 1400),
   ...addArtists("friday", "district-doghouse", [
+    { name: "RockFit", start: "11:00", end: "12:00" },
     { name: "Black Parade", start: "22:00", end: "23:30" },
+    { name: "Chop Suey", start: "23:30", end: "00:00" },
+    { name: "Dick & Dom DJ Set", start: "00:00", end: "01:00" },
+    { name: "Chop Suey", start: "01:00", end: "01:30" },
+    { name: "Creeper DJ Set", start: "01:30", end: "02:30" },
+    { name: "Chop Suey", start: "02:30", end: "03:00" },
+  ], 1500),
+  ...addArtists("saturday", "district-doghouse", [
+    { name: "RockFit", start: "11:00", end: "12:00" },
+    { name: "Gemma Edwards", start: "22:00", end: "23:15" },
+    { name: "Lucas Woodland from Holding Absence", start: "23:15", end: "00:15" },
+    { name: "Gemma Edwards", start: "00:15", end: "00:30" },
+    { name: "The All American Rejects", start: "00:30", end: "01:00" },
+    { name: "Gemma Edwards", start: "01:00", end: "01:30" },
+    { name: "Modestep DJ Set", start: "01:30", end: "03:00" },
   ], 1600),
+  ...addArtists("sunday", "district-doghouse", [
+    { name: "RockFit", start: "11:00", end: "12:00" },
+    { name: "Kickstart My Heart", start: "22:00", end: "23:30" },
+    { name: "End Of The World Party", start: "23:30", end: "03:00" },
+  ], 1700),
+  ...addArtists("wednesday", "district-den", [
+    { name: "Matt Reid", start: "14:00", end: "14:15" },
+    { name: "Rich Wilson", start: "14:15", end: "14:30" },
+    { name: "Tom Wrigglesworth", start: "14:30", end: "14:45" },
+    { name: "Harriett Dyer", start: "14:45", end: "15:00" },
+    { name: "Matt Price", start: "15:00", end: "15:15" },
+    { name: "Felicity Ward", start: "15:15", end: "15:30" },
+    { name: "Matt Stellingwerf", start: "15:30", end: "16:00" },
+    { name: "Peter Brush", start: "16:00", end: "16:15" },
+    { name: "Geoff Norcott", start: "16:15", end: "16:30" },
+    { name: "Dave Fulton", start: "16:30", end: "16:45" },
+    { name: "Thomas Green", start: "16:45", end: "17:00" },
+    { name: "Dave Longley", start: "18:00", end: "18:15" },
+    { name: "Frisian Shah", start: "18:15", end: "18:30" },
+    { name: "Joe Wells", start: "18:30", end: "18:45" },
+    { name: "Eddy Brimson", start: "18:45", end: "19:00" },
+    { name: "Thor Stenhaug", start: "19:00", end: "19:15" },
+    { name: "Stephen Bailey", start: "19:15", end: "19:30" },
+    { name: "Sully O'Sullivan", start: "19:30", end: "19:45" },
+    { name: "Jordan Gray's Comedy Club", start: "20:00", end: "20:15" },
+    { name: "She They Press Play Showcase", start: "21:30", end: "22:00" },
+    { name: "TokenGrass", start: "22:00", end: "22:55" },
+    { name: "She They Press Play Showcase", start: "23:00", end: "23:30" },
+    { name: "Bongo's Bingo", start: "23:30", end: "01:00" },
+    { name: "She They Press Play Showcase", start: "01:00", end: "03:00" },
+  ], 1800),
+  ...addArtists("thursday", "district-den", [
+    { name: "RuMac", start: "11:00", end: "12:00" },
+    { name: "Kerrang! Radio's", start: "12:30", end: "13:30" },
+    { name: "Danny Mc", start: "14:00", end: "14:15" },
+    { name: "Leroy Brito", start: "14:15", end: "14:30" },
+    { name: "Brennan Reece", start: "14:30", end: "14:45" },
+    { name: "Tom Taylor", start: "14:45", end: "15:00" },
+    { name: "Bobby Mair", start: "15:00", end: "15:15" },
+    { name: "Matt Bragg", start: "15:15", end: "15:30" },
+    { name: "Kate Lucas", start: "15:30", end: "16:00" },
+    { name: "Garrett Millerick", start: "16:00", end: "16:15" },
+    { name: "Sikisa", start: "16:15", end: "16:30" },
+    { name: "Mick Ferry", start: "16:30", end: "16:45" },
+    { name: "Jordan Gray", start: "16:45", end: "17:00" },
+    { name: "Dave Hill", start: "17:30", end: "18:00" },
+    { name: "Dave Hill", start: "18:15", end: "18:45" },
+    { name: "Dinesh Nathan", start: "18:45", end: "19:00" },
+    { name: "Hatty Preston", start: "19:00", end: "19:15" },
+    { name: "Markus Birdman", start: "19:15", end: "19:30" },
+    { name: "Liam Farrelly", start: "19:30", end: "19:45" },
+    { name: "Cary Marx", start: "19:45", end: "20:00" },
+    { name: "Cray Cray Cabaret", start: "20:15", end: "20:30" },
+    { name: "Alex Baker", start: "21:30", end: "22:00" },
+    { name: "Dune Rats", start: "22:00", end: "23:00" },
+    { name: "Alex Baker", start: "23:00", end: "23:30" },
+    { name: "Bongo's Bingo", start: "23:30", end: "01:00" },
+    { name: "Liam Cormier", start: "01:00", end: "03:00" },
+  ], 1900),
+  ...addArtists("friday", "district-den", [
+    { name: "Rock Kids", start: "10:00", end: "11:00" },
+    { name: "Fat Lip", start: "23:00", end: "00:00" },
+    { name: "Fat Lip", start: "00:30", end: "01:00" },
+    { name: "Face Down Remix Challenge", start: "01:00", end: "02:00" },
+    { name: "Face Down", start: "02:00", end: "03:00" },
+  ], 2000),
+  ...addArtists("saturday", "district-den", [
+    { name: "Rock Kids", start: "10:00", end: "11:00" },
+    { name: "NEXT GEN", start: "23:00", end: "00:00" },
+    { name: "NEXT GEN", start: "00:30", end: "01:00" },
+    { name: "Frozemode", start: "01:00", end: "01:30" },
+    { name: "Master of Pop Hits", start: "01:30", end: "03:00" },
+  ], 2100),
+  ...addArtists("sunday", "district-den", [
+    { name: "Rock Kids", start: "10:00", end: "11:00" },
+    { name: "Sophie K", start: "23:00", end: "00:00" },
+    { name: "Sophie K", start: "00:30", end: "01:30" },
+  ], 2200),
   ...addArtists("wednesday", "district-ace-spades", [
+    { name: "Panic! At The Bingo", start: "15:00", end: "17:00" },
+    { name: "Chris Fleming Millennial Magician", start: "17:30", end: "18:30" },
+    { name: "Sappenin' Podcast", start: "19:00", end: "20:00" },
+    { name: "Live Band Karaoke with Ten Years Too Late", start: "20:30", end: "22:30" },
     { name: "Silent Disco - Attitude Era vs Soundtrax", start: "23:00", end: "01:00" },
     { name: "Silent Disco - Metalcore vs Hair Metal", start: "01:00", end: "03:00" },
-  ], 1700),
+  ], 2300),
   ...addArtists("thursday", "district-ace-spades", [
+    { name: "MEYBA Football Quiz", start: "10:30", end: "12:00" },
+    { name: "Panic! At The Bingo", start: "13:30", end: "15:30" },
+    { name: "The Metal Roundup Podcast", start: "16:00", end: "17:00" },
+    { name: "Never Mind The Download Pub Quiz", start: "19:00", end: "21:00" },
+    { name: "Ace Of Slays", start: "21:30", end: "23:00" },
     { name: "Silent Disco - Ozzy & Black Sabbath vs Back to the Beginning Bands", start: "23:30", end: "01:00" },
     { name: "Silent Disco - Buffy vs Twilight", start: "01:00", end: "02:00" },
     { name: "Silent Disco - Disney vs Dad Rock", start: "02:00", end: "03:00" },
-  ], 1800),
+  ], 2400),
   ...addArtists("friday", "district-ace-spades", [
+    { name: "Download Family Feud", start: "11:00", end: "12:00" },
+    { name: "OCT (On Company Time)", start: "23:30", end: "00:15" },
     { name: "Silent Disco - K-Pop vs Emo", start: "01:00", end: "03:00" },
-  ], 1900),
+  ], 2500),
   ...addArtists("saturday", "district-ace-spades", [
+    { name: "ADHD Love", start: "10:30", end: "11:30" },
     { name: "Silent Disco - System of a Down vs Slipknot", start: "23:00", end: "00:00" },
     { name: "Silent Disco - Metallica vs AC/DC", start: "00:00", end: "01:00" },
     { name: "Silent Disco - Avril vs Blink", start: "01:00", end: "02:00" },
     { name: "Silent Disco - My Chemical Romance vs The Used", start: "02:00", end: "03:00" },
-  ], 2000),
+  ], 2600),
   ...addArtists("sunday", "district-ace-spades", [
+    { name: "Download Family Feud", start: "11:00", end: "12:00" },
     { name: "Silent Disco - Football Anthems vs Power Anthems", start: "23:00", end: "01:00" },
     { name: "Silent Disco - DL26 Pre-2000 vs DL26 Post-2000", start: "01:00", end: "03:00" },
-  ], 2100),
+  ], 2700),
+  ...addArtists("wednesday", "district-outpost", [
+    { name: "School of Rock", start: "13:00", end: "21:00" },
+  ], 2800),
+  ...addArtists("thursday", "district-outpost", [
+    { name: "Flowstate", start: "10:00", end: "11:30" },
+    { name: "School of Rock", start: "12:00", end: "20:00" },
+    { name: "London Short Film Festival", start: "21:30", end: "23:00" },
+  ], 2900),
+  ...addArtists("friday", "district-outpost", [
+    { name: "Flowstate", start: "09:00", end: "10:30" },
+  ], 3000),
+  ...addArtists("saturday", "district-outpost", [
+    { name: "Flowstate", start: "09:00", end: "10:30" },
+  ], 3100),
+  ...addArtists("sunday", "district-outpost", [
+    { name: "Flowstate", start: "09:00", end: "10:30" },
+  ], 3200),
   ...addArtists("wednesday", "rip-courtyard", [
     { name: "Nephwrack", start: "15:45", end: "16:30" },
     { name: "Cwfen", start: "17:00", end: "17:45" },
@@ -281,15 +436,16 @@ export const lineup: Artist[] = [
     { name: "Knives", start: "19:30", end: "20:15" },
     { name: "Margarita Witch Cult", start: "20:45", end: "21:30" },
     { name: "Split Dogs", start: "22:00", end: "23:00" },
-  ], 2200),
+  ], 3300),
   ...addArtists("thursday", "rip-courtyard", [
+    { name: "The LoadDown Podcast", start: "14:00", end: "14:45" },
     { name: "Outlander", start: "15:45", end: "16:30" },
     { name: "Silo", start: "17:00", end: "17:45" },
     { name: "Mallavora", start: "18:15", end: "19:00" },
     { name: "Creeping Jean", start: "19:30", end: "20:15" },
     { name: "Tropic Gold", start: "20:45", end: "21:30" },
     { name: "Riding The Low", start: "22:00", end: "23:00" },
-  ], 2300),
+  ], 3400),
 ];
 
 export const isDistrictXArtist = (artist: Artist) =>

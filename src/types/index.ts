@@ -8,6 +8,7 @@ export type StageId =
   | "district-den"
   | "district-doghouse"
   | "district-ace-spades"
+  | "district-outpost"
   | "rip-courtyard";
 
 export type Intent = "interested" | "definite";

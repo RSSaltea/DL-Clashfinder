@@ -238,7 +238,7 @@ export const CombinedTimetableView = ({
           <div className="tt-combined-day" key={group.day.id}>
             <div
               className="tt-day-label"
-              style={{ width: DAY_LABEL_W, minWidth: DAY_LABEL_W, height: group.rows.length * ROW_H }}
+              style={{ width: DAY_LABEL_W, minWidth: DAY_LABEL_W }}
               title={group.day.label}
             >
               {group.day.shortLabel}

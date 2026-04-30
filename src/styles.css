@@ -1012,6 +1012,10 @@ p {
   border-left-color: var(--green);
 }
 
+.stage-district-outpost {
+  border-left-color: var(--amber);
+}
+
 .stage-rip-courtyard {
   border-left-color: var(--line-strong);
 }
@@ -2383,6 +2387,12 @@ input.is-error {
   min-width: max-content;
 }
 
+.tt-combined .tt-scroll,
+.tt-combined-day,
+.tt-combined-rows {
+  background: var(--bg-2);
+}
+
 .tt-day-corner {
   display: flex;
   align-items: center;
@@ -2421,6 +2431,7 @@ input.is-error {
   display: flex;
   align-items: center;
   justify-content: center;
+  align-self: stretch;
   flex-shrink: 0;
   position: sticky;
   left: 0;
@@ -2640,6 +2651,7 @@ input.is-error {
 .timetable-staged-col-header.stage-district-den { border-left-color: var(--purple); }
 .timetable-staged-col-header.stage-district-doghouse { border-left-color: var(--pink); }
 .timetable-staged-col-header.stage-district-ace-spades { border-left-color: var(--green); }
+.timetable-staged-col-header.stage-district-outpost { border-left-color: var(--amber); }
 .timetable-staged-col-header.stage-rip-courtyard { border-left-color: var(--line-strong); }
 
 .timetable--staged {
