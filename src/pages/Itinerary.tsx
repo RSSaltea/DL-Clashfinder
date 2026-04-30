@@ -1,16 +1,14 @@
 import { Download } from "lucide-react";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { CombinedTimetableView } from "../components/CombinedTimetableView";
 import { ItineraryViewControls, type ItineraryViewMode } from "../components/ItineraryViewControls";
 import { ScheduleDayView } from "../components/ScheduleDayView";
-import { TimetableView } from "../components/TimetableView";
-import { getDay, getFestivalDays, getFestivalStages, getLineup } from "../data/lineup";
+import { getFestivalDays, getFestivalStages, getLineup } from "../data/lineup";
 import type { ClashDecisionMap, DayId, IntentMap, SetTimeMap } from "../types";
 import { downloadElementAsPng } from "../utils/imageExport";
 import { loadFreeTimeWindow, loadTimetableStages, saveTimetableStages } from "../utils/localStorage";
 import { buildScheduleDay } from "../utils/schedule";
 import { timeToMinutes, windowEndToMins } from "../utils/time";
-
-type ItineraryDayFilter = "all" | DayId;
 
 interface ItineraryProps {
   intents: IntentMap;
@@ -21,7 +19,9 @@ interface ItineraryProps {
 
 export const Itinerary = ({ includeDistrictX, intents, setTimes, clashDecisions }: ItineraryProps) => {
   const [viewMode, setViewMode] = useState<ItineraryViewMode>("list");
-  const [dayFilter, setDayFilter] = useState<ItineraryDayFilter>("all");
+  const [selectedDayIds, setSelectedDayIds] = useState<DayId[]>(() =>
+    getFestivalDays(includeDistrictX).map((day) => day.id),
+  );
   const [showStages, setShowStages] = useState(() => loadTimetableStages());
   const [freeTimeOnly, setFreeTimeOnly] = useState(false);
   const [exportState, setExportState] = useState<"idle" | "saving" | "error">("idle");
@@ -32,6 +32,18 @@ export const Itinerary = ({ includeDistrictX, intents, setTimes, clashDecisions 
   const freeTimeWindow = useMemo(() => loadFreeTimeWindow(), []);
   const windowStartMins = timeToMinutes(freeTimeWindow.start) ?? 600;
   const windowEndMins = windowEndToMins(freeTimeWindow.end);
+  const availableDayIds = useMemo(() => availableDays.map((day) => day.id), [availableDays]);
+  const allDaysSelected = selectedDayIds.length === availableDayIds.length && availableDayIds.length > 0;
+  const selectedDaySet = useMemo(() => new Set(selectedDayIds), [selectedDayIds]);
+
+  useEffect(() => {
+    setSelectedDayIds((current) => {
+      if (current.length === 0) return [];
+      const available = new Set(availableDayIds);
+      const stillAvailable = current.filter((dayId) => available.has(dayId));
+      return stillAvailable.length > 0 ? stillAvailable : availableDayIds;
+    });
+  }, [availableDayIds]);
 
   const toggleStages = () => {
     const next = !showStages;
@@ -49,20 +61,40 @@ export const Itinerary = ({ includeDistrictX, intents, setTimes, clashDecisions 
   );
 
   const visibleSchedules = useMemo(
-    () => schedules.filter((schedule) => dayFilter === "all" || schedule.dayId === dayFilter),
-    [dayFilter, schedules],
+    () => schedules.filter((schedule) => selectedDaySet.has(schedule.dayId)),
+    [schedules, selectedDaySet],
   );
 
   const visibleDays = useMemo(
-    () => availableDays.filter((d) => dayFilter === "all" || d.id === dayFilter),
-    [availableDays, dayFilter],
+    () => availableDays.filter((day) => selectedDaySet.has(day.id)),
+    [availableDays, selectedDaySet],
   );
+
+  const selectedDaySlug = allDaysSelected
+    ? "all"
+    : selectedDayIds.length > 0
+      ? selectedDayIds.join("-")
+      : "no-days";
+
+  const toggleAllDays = () => {
+    setSelectedDayIds(allDaysSelected ? [] : availableDayIds);
+  };
+
+  const toggleDay = (dayId: DayId) => {
+    setSelectedDayIds((current) => {
+      const next = current.includes(dayId)
+        ? current.filter((id) => id !== dayId)
+        : [...current, dayId];
+      const nextSet = new Set(next);
+      return availableDayIds.filter((id) => nextSet.has(id));
+    });
+  };
 
   const exportItinerary = async () => {
     if (!exportRef.current) return;
     setExportState("saving");
     try {
-      await downloadElementAsPng(exportRef.current, `download-2026-itinerary-${dayFilter}.png`);
+      await downloadElementAsPng(exportRef.current, `download-2026-itinerary-${selectedDaySlug}.png`);
       setExportState("idle");
     } catch {
       setExportState("error");
@@ -98,8 +130,8 @@ export const Itinerary = ({ includeDistrictX, intents, setTimes, clashDecisions 
         <div className="segmented-control">
           <button
             type="button"
-            className={dayFilter === "all" ? "is-active" : ""}
-            onClick={() => setDayFilter("all")}
+            className={allDaysSelected ? "is-active" : ""}
+            onClick={toggleAllDays}
           >
             All
           </button>
@@ -107,8 +139,8 @@ export const Itinerary = ({ includeDistrictX, intents, setTimes, clashDecisions 
             <button
               key={day.id}
               type="button"
-              className={dayFilter === day.id ? "is-active" : ""}
-              onClick={() => setDayFilter(day.id)}
+              className={selectedDaySet.has(day.id) ? "is-active" : ""}
+              onClick={() => toggleDay(day.id)}
             >
               {day.shortLabel}
             </button>
@@ -136,29 +168,21 @@ export const Itinerary = ({ includeDistrictX, intents, setTimes, clashDecisions 
         ref={exportRef}
       >
         {viewMode === "horizontal"
-          ? visibleDays.map((day) => (
-              <div key={day.id} className="day-group">
-                <div className="day-heading">
-                  <h2>{getDay(day.id as DayId)?.label}</h2>
-                </div>
-                <TimetableView
-                  day={day.id as DayId}
-                  intents={intents}
-                  setTimes={setTimes}
-                  showStages={showStages}
-                  hideUnpicked
-                  freeTimeOnly={freeTimeOnly}
-                  artists={visibleLineup}
-                  stages={getStagesForDay(day.id as DayId)}
-                  artistIds={schedules
-                    .find((schedule) => schedule.dayId === day.id)
-                    ?.attending.map((item) => item.artist.id)}
-                  freeTimeGaps={schedules
-                    .find((schedule) => schedule.dayId === day.id)
-                    ?.gaps.map((gap) => ({ start: gap.start, end: gap.end }))}
-                />
+          ? (
+              <CombinedTimetableView
+                days={visibleDays}
+                schedules={visibleSchedules}
+                intents={intents}
+                showStages={showStages}
+                freeTimeOnly={freeTimeOnly}
+                getStagesForDay={getStagesForDay}
+              />
+            )
+          : visibleSchedules.length === 0 ? (
+              <div className="empty-state tight">
+                <p className="muted">No days selected.</p>
               </div>
-            ))
+            )
           : visibleSchedules.map((schedule) => (
               <ScheduleDayView
                 key={schedule.dayId}

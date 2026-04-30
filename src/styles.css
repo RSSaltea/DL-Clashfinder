@@ -2379,6 +2379,84 @@ input.is-error {
   pointer-events: none;
 }
 
+.tt-combined .tt-header {
+  min-width: max-content;
+}
+
+.tt-day-corner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  position: sticky;
+  left: 0;
+  z-index: 14;
+  border-right: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.tt-combined .tt-corner {
+  position: sticky;
+  left: var(--tt-day-label-w);
+  z-index: 13;
+}
+
+.tt-combined-day {
+  display: flex;
+  align-items: stretch;
+  min-width: max-content;
+  border-bottom: 1px solid var(--line);
+}
+
+.tt-combined-day:last-child {
+  border-bottom: 0;
+}
+
+.tt-day-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  position: sticky;
+  left: 0;
+  z-index: 8;
+  border-right: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--text);
+  font-size: 0.74rem;
+  font-weight: 850;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+}
+
+.tt-combined-rows {
+  display: grid;
+  min-width: max-content;
+}
+
+.tt-combined-rows .tt-row {
+  border-bottom: 1px solid var(--line);
+}
+
+.tt-combined-rows .tt-row:last-child {
+  border-bottom: 0;
+}
+
+.tt-combined .tt-stage-label {
+  left: var(--tt-day-label-w);
+}
+
+.tt-combined .tt-row--solo .tt-track {
+  border-left: 0;
+}
+
 /* Theme toggle button sits in the nav */
 .theme-toggle {
   flex-shrink: 0;
