@@ -178,6 +178,9 @@ export const useFestivalState = () => {
   ]);
 
   const applyAccountPlan = useCallback((plan: AccountPlan) => {
+    const nextGroupCode = plan.groupCode ?? "";
+    const keepLiveGroupSync = nextGroupCode === activeGroupCodeRef.current;
+
     setProfileNameState(plan.profileName || "Me");
     setIntents(plan.intents ?? {});
     setImportsState(plan.imports ?? []);
@@ -185,10 +188,12 @@ export const useFestivalState = () => {
     setGroupClashVotesByCode(plan.groupClashVotesByCode ?? {});
     setFreeTimeNotes(plan.freeTimeNotes ?? {});
     setGroupFreeTimeNotesByCode(plan.groupFreeTimeNotesByCode ?? {});
-    setGroupCodeState(plan.groupCode ?? "");
-    setGroupCodeDraftState(plan.groupCode ?? "");
+    setGroupCodeState(nextGroupCode);
+    setGroupCodeDraftState(nextGroupCode);
     setGroupCodes(plan.groupCodes ?? []);
-    setSyncedImports([]);
+    setSyncedImports((current) => (keepLiveGroupSync ? current : []));
+    setGroupMembers((current) => (keepLiveGroupSync ? current : []));
+    setMyGroupRole((current) => (keepLiveGroupSync ? current : "member"));
   }, []);
 
   const completeAccountSignIn = useCallback(async (
@@ -449,10 +454,14 @@ export const useFestivalState = () => {
 
   const activateGroupCode = (value: string) => {
     const nextGroupCode = normaliseGroupCode(value);
+    const groupChanged = nextGroupCode !== activeGroupCodeRef.current;
 
     setGroupCodeDraftState(nextGroupCode);
-    setSyncedImports([]);
-    setGroupMembers([]);
+    if (groupChanged) {
+      setSyncedImports([]);
+      setGroupMembers([]);
+      setMyGroupRole("member");
+    }
     setGroupCodeState(nextGroupCode);
     activeGroupCodeRef.current = nextGroupCode;
     rememberGroupCode(nextGroupCode);
@@ -542,7 +551,7 @@ export const useFestivalState = () => {
         configured: true,
         status: "error",
         message: error instanceof Error ? error.message : "Group sync failed.",
-        memberCount: syncedImports.length + 1,
+        memberCount: 1,
       });
     }
   }, [
@@ -557,7 +566,6 @@ export const useFestivalState = () => {
     profileName,
     setTimes,
     syncConfigured,
-    syncedImports.length,
   ]);
 
   const removeGroupMember = useCallback(async (memberIdToRemove: string) => {
