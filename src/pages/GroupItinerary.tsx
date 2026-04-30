@@ -4,12 +4,12 @@ import { CombinedTimetableView } from "../components/CombinedTimetableView";
 import { ItineraryViewControls, type ItineraryViewMode } from "../components/ItineraryViewControls";
 import { ScheduleDayView } from "../components/ScheduleDayView";
 import { getFestivalDays, getFestivalStages, getLineup } from "../data/lineup";
-import type { ClashDecisionMap, DayId, FestivalExport, Intent, IntentMap, ProfilePlan, SetTimeMap } from "../types";
+import type { ClashDecisionMap, DayId, FestivalExport, FreeTimeNoteMap, GroupMemberRole, Intent, IntentMap, ProfilePlan, SetTimeMap } from "../types";
 import { getAllClashes } from "../utils/clash";
 import { getGroupClashDecisionMap } from "../utils/groupVotes";
 import { downloadElementAsPng } from "../utils/imageExport";
 import { loadFreeTimeWindow, loadTimetableStages, saveTimetableStages } from "../utils/localStorage";
-import { buildScheduleDay, getGroupArtists, getSupportMap } from "../utils/schedule";
+import { buildScheduleDay, getGroupArtists, getSupportMap, mergeGroupFreeTimeNotes } from "../utils/schedule";
 import { timeToMinutes, windowEndToMins } from "../utils/time";
 
 interface GroupItineraryProps {
@@ -21,6 +21,9 @@ interface GroupItineraryProps {
   syncedImports: FestivalExport[];
   groupClashVotes: ClashDecisionMap;
   groupCode: string;
+  myGroupRole: GroupMemberRole;
+  groupFreeTimeNotes: FreeTimeNoteMap;
+  onGroupFreeTimeNoteChange: (noteKey: string, value: string) => void;
   includeDistrictX: boolean;
 }
 
@@ -33,6 +36,9 @@ export const GroupItinerary = ({
   syncedImports,
   groupClashVotes,
   groupCode,
+  myGroupRole,
+  groupFreeTimeNotes,
+  onGroupFreeTimeNoteChange,
   includeDistrictX,
 }: GroupItineraryProps) => {
   const [viewMode, setViewMode] = useState<ItineraryViewMode>("list");
@@ -70,7 +76,17 @@ export const GroupItinerary = ({
 
   const profiles = useMemo<ProfilePlan[]>(
     () => [
-      { id: "local", name: profileName || "Me", accountUsername, intents, setTimes, groupClashVotes, groupCode },
+      {
+        id: "local",
+        name: profileName || "Me",
+        accountUsername,
+        intents,
+        setTimes,
+        groupClashVotes,
+        groupCode,
+        groupFreeTimeNotes,
+        groupRole: myGroupRole,
+      },
       ...syncedImports.map((item, index) => ({
         id: `synced-${item.profileName}-${index}`,
         name: item.profileName,
@@ -79,6 +95,8 @@ export const GroupItinerary = ({
         setTimes: item.setTimes,
         groupClashVotes: item.groupClashVotes,
         groupCode: item.groupCode,
+        groupFreeTimeNotes: item.groupFreeTimeNotes,
+        groupRole: item.groupRole,
       })),
       ...imports.map((item, index) => ({
         id: `imported-${item.profileName}-${index}`,
@@ -88,9 +106,11 @@ export const GroupItinerary = ({
         setTimes: item.setTimes,
         groupClashVotes: item.groupClashVotes,
         groupCode: item.groupCode,
+        groupFreeTimeNotes: item.groupFreeTimeNotes,
+        groupRole: item.groupRole,
       })),
     ],
-    [accountUsername, groupClashVotes, groupCode, imports, intents, profileName, setTimes, syncedImports],
+    [accountUsername, groupClashVotes, groupCode, groupFreeTimeNotes, imports, intents, myGroupRole, profileName, setTimes, syncedImports],
   );
 
   const combinedSetTimes = useMemo(
@@ -112,6 +132,8 @@ export const GroupItinerary = ({
   }, [profiles]);
 
   const supportMap = useMemo(() => getSupportMap(profiles), [profiles]);
+  const mergedGroupFreeTimeNotes = useMemo(() => mergeGroupFreeTimeNotes(profiles), [profiles]);
+  const canEditGroupFreeTimeNotes = Boolean(groupCode) && (myGroupRole === "leader" || myGroupRole === "admin");
 
   const groupDecisionMap = useMemo(() => {
     const groupArtists = getGroupArtists(profiles, undefined, visibleLineup);
@@ -239,6 +261,12 @@ export const GroupItinerary = ({
         <p className="error-banner">Could not save the image. Try switching to List view and exporting again.</p>
       )}
 
+      {groupCode && !canEditGroupFreeTimeNotes && (
+        <p className="muted" style={{ marginBottom: "0.85rem" }}>
+          Group free-time labels can be edited by the group leader or admins.
+        </p>
+      )}
+
       <div
         className={`itinerary-export-area${viewMode === "horizontal" ? " itinerary-export-area--horizontal" : ""}`}
         ref={exportRef}
@@ -252,6 +280,9 @@ export const GroupItinerary = ({
                 showStages={showStages}
                 freeTimeOnly={freeTimeOnly}
                 getStagesForDay={getStagesForDay}
+                freeTimeNotes={mergedGroupFreeTimeNotes}
+                onFreeTimeNoteChange={onGroupFreeTimeNoteChange}
+                canEditFreeTimeNotes={canEditGroupFreeTimeNotes}
               />
             )
           : visibleSchedules.length === 0 ? (
@@ -268,6 +299,9 @@ export const GroupItinerary = ({
                 showStages={showStages}
                 freeTimeOnly={freeTimeOnly}
                 stages={getStagesForDay(schedule.dayId)}
+                freeTimeNotes={mergedGroupFreeTimeNotes}
+                onFreeTimeNoteChange={onGroupFreeTimeNoteChange}
+                canEditFreeTimeNotes={canEditGroupFreeTimeNotes}
               />
             ))}
       </div>

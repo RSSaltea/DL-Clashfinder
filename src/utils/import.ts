@@ -1,4 +1,4 @@
-import type { ClashDecisionMap, FestivalExport, IntentMap, SetTimeMap } from "../types";
+import type { ClashDecisionMap, FestivalExport, FreeTimeNoteMap, IntentMap, SetTimeMap } from "../types";
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
@@ -42,6 +42,18 @@ const parseClashDecisions = (value: unknown): ClashDecisionMap => {
   ) as ClashDecisionMap;
 };
 
+const parseFreeTimeNotes = (value: unknown): FreeTimeNoteMap => {
+  if (!isRecord(value)) {
+    return {};
+  }
+
+  return Object.fromEntries(
+    Object.entries(value)
+      .filter(([key, note]) => typeof key === "string" && typeof note === "string")
+      .map(([key, note]) => [key, (note as string).trim()]),
+  );
+};
+
 export const parseFestivalExport = (
   parsed: unknown,
   fallbackProfileName = "Imported plan",
@@ -70,6 +82,8 @@ export const parseFestivalExport = (
     groupClashVotes: parseClashDecisions(parsed.groupClashVotes),
     groupCode: typeof parsed.groupCode === "string" ? parsed.groupCode.trim() : undefined,
     accountUsername: typeof parsed.accountUsername === "string" ? parsed.accountUsername.trim() : undefined,
+    freeTimeNotes: parseFreeTimeNotes(parsed.freeTimeNotes),
+    groupFreeTimeNotes: parseFreeTimeNotes(parsed.groupFreeTimeNotes),
   };
 };
 

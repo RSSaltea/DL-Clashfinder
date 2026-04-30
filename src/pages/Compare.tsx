@@ -1,5 +1,5 @@
 import { ComparisonView } from "../components/ComparisonView";
-import type { ClashDecisionMap, FestivalExport, IntentMap, SetTimeMap } from "../types";
+import type { ClashDecisionMap, FestivalExport, FreeTimeNoteMap, IntentMap, SetTimeMap } from "../types";
 import type { GroupMemberInfo, GroupMemberRole, GroupSyncState } from "../utils/groupSync";
 
 interface CompareProps {
@@ -25,6 +25,8 @@ interface CompareProps {
   myGroupRole: GroupMemberRole;
   onRemoveGroupMember: (memberId: string) => Promise<void>;
   onSetGroupMemberRole: (memberId: string, role: "admin" | "member") => Promise<void>;
+  freeTimeNotes: FreeTimeNoteMap;
+  groupFreeTimeNotes: FreeTimeNoteMap;
   includeDistrictX: boolean;
 }
 

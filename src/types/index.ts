@@ -13,6 +13,8 @@ export type StageId =
 
 export type Intent = "interested" | "definite";
 
+export type GroupMemberRole = "leader" | "admin" | "member";
+
 export interface FestivalDay {
   id: DayId;
   label: string;
@@ -51,6 +53,10 @@ export type ClashDecisionMap = Record<string, string>;
 
 export type GroupClashVoteMap = Record<string, ClashDecisionMap>;
 
+export type FreeTimeNoteMap = Record<string, string>;
+
+export type GroupFreeTimeNoteMap = Record<string, FreeTimeNoteMap>;
+
 export interface ProfilePlan {
   id: string;
   name: string;
@@ -60,6 +66,9 @@ export interface ProfilePlan {
   clashDecisions?: ClashDecisionMap;
   groupClashVotes?: ClashDecisionMap;
   groupCode?: string;
+  freeTimeNotes?: FreeTimeNoteMap;
+  groupFreeTimeNotes?: FreeTimeNoteMap;
+  groupRole?: GroupMemberRole;
 }
 
 export interface FestivalExport {
@@ -76,6 +85,9 @@ export interface FestivalExport {
   groupClashVotes?: ClashDecisionMap;
   groupCode?: string;
   accountUsername?: string;
+  freeTimeNotes?: FreeTimeNoteMap;
+  groupFreeTimeNotes?: FreeTimeNoteMap;
+  groupRole?: GroupMemberRole;
 }
 
 export interface AccountSession {
@@ -91,6 +103,8 @@ export interface AccountPlan {
   imports: FestivalExport[];
   clashDecisions: ClashDecisionMap;
   groupClashVotesByCode: GroupClashVoteMap;
+  freeTimeNotes: FreeTimeNoteMap;
+  groupFreeTimeNotesByCode: GroupFreeTimeNoteMap;
   groupCode: string;
   groupCodes: string[];
 }

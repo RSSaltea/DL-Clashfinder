@@ -4,7 +4,7 @@ import { CombinedTimetableView } from "../components/CombinedTimetableView";
 import { ItineraryViewControls, type ItineraryViewMode } from "../components/ItineraryViewControls";
 import { ScheduleDayView } from "../components/ScheduleDayView";
 import { getFestivalDays, getFestivalStages, getLineup } from "../data/lineup";
-import type { ClashDecisionMap, DayId, IntentMap, SetTimeMap } from "../types";
+import type { ClashDecisionMap, DayId, FreeTimeNoteMap, IntentMap, SetTimeMap } from "../types";
 import { downloadElementAsPng } from "../utils/imageExport";
 import { loadFreeTimeWindow, loadTimetableStages, saveTimetableStages } from "../utils/localStorage";
 import { buildScheduleDay } from "../utils/schedule";
@@ -14,10 +14,19 @@ interface ItineraryProps {
   intents: IntentMap;
   setTimes: SetTimeMap;
   clashDecisions: ClashDecisionMap;
+  freeTimeNotes: FreeTimeNoteMap;
+  onFreeTimeNoteChange: (noteKey: string, value: string) => void;
   includeDistrictX: boolean;
 }
 
-export const Itinerary = ({ includeDistrictX, intents, setTimes, clashDecisions }: ItineraryProps) => {
+export const Itinerary = ({
+  includeDistrictX,
+  intents,
+  setTimes,
+  clashDecisions,
+  freeTimeNotes,
+  onFreeTimeNoteChange,
+}: ItineraryProps) => {
   const [viewMode, setViewMode] = useState<ItineraryViewMode>("list");
   const [selectedDayIds, setSelectedDayIds] = useState<DayId[]>(() =>
     getFestivalDays(includeDistrictX).map((day) => day.id),
@@ -176,6 +185,9 @@ export const Itinerary = ({ includeDistrictX, intents, setTimes, clashDecisions 
                 showStages={showStages}
                 freeTimeOnly={freeTimeOnly}
                 getStagesForDay={getStagesForDay}
+                freeTimeNotes={freeTimeNotes}
+                onFreeTimeNoteChange={onFreeTimeNoteChange}
+                canEditFreeTimeNotes
               />
             )
           : visibleSchedules.length === 0 ? (
@@ -191,6 +203,9 @@ export const Itinerary = ({ includeDistrictX, intents, setTimes, clashDecisions 
                 showStages={showStages}
                 freeTimeOnly={freeTimeOnly}
                 stages={getStagesForDay(schedule.dayId)}
+                freeTimeNotes={freeTimeNotes}
+                onFreeTimeNoteChange={onFreeTimeNoteChange}
+                canEditFreeTimeNotes
               />
             ))}
       </div>

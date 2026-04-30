@@ -39,6 +39,41 @@ export interface StageTransfer {
   text: string;
 }
 
+const groupRoleWeight = {
+  member: 1,
+  admin: 2,
+  leader: 3,
+} as const;
+
+export const getFreeTimeNoteKey = (dayId: Artist["day"], start: number, end: number) =>
+  `${dayId}:${start}-${end}`;
+
+export const mergeGroupFreeTimeNotes = (profiles: ProfilePlan[]) =>
+  [...profiles]
+    .sort((a, b) => {
+      const aWeight = a.groupRole ? groupRoleWeight[a.groupRole] : 0;
+      const bWeight = b.groupRole ? groupRoleWeight[b.groupRole] : 0;
+      if (aWeight !== bWeight) {
+        return aWeight - bWeight;
+      }
+      if (a.id === "local") {
+        return 1;
+      }
+      if (b.id === "local") {
+        return -1;
+      }
+      return 0;
+    })
+    .reduce<Record<string, string>>((notes, profile) => {
+      Object.entries(profile.groupFreeTimeNotes ?? {}).forEach(([key, note]) => {
+        if (note.trim()) {
+          notes[key] = note;
+        }
+      });
+
+      return notes;
+    }, {});
+
 export const getTimedArtist = (
   artist: Artist,
   setTimes: SetTimeMap,

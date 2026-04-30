@@ -1,7 +1,8 @@
 import type { CSSProperties } from "react";
 import { Link } from "react-router-dom";
-import type { DayId, FestivalDay, FestivalStage, IntentMap } from "../types";
+import type { DayId, FestivalDay, FestivalStage, FreeTimeNoteMap, IntentMap } from "../types";
 import type { ScheduleDay, ScheduleGap, TimedArtist } from "../utils/schedule";
+import { getFreeTimeNoteKey } from "../utils/schedule";
 import { formatDuration, minutesToTime } from "../utils/time";
 
 const HOUR_W = 180;
@@ -10,10 +11,10 @@ const STAGE_LABEL_W = 76;
 const ROW_H = 80;
 
 type CombinedRow =
-  | { type: "stage"; key: string; label: string; stage: FestivalStage; items: TimedArtist[] }
-  | { type: "solo"; key: string; label: string; items: TimedArtist[]; gaps: ScheduleGap[] }
-  | { type: "free"; key: string; label: string; gaps: ScheduleGap[] }
-  | { type: "empty"; key: string; label: string; message: string };
+  | { type: "stage"; key: string; dayId: DayId; label: string; stage: FestivalStage; items: TimedArtist[] }
+  | { type: "solo"; key: string; dayId: DayId; label: string; items: TimedArtist[]; gaps: ScheduleGap[] }
+  | { type: "free"; key: string; dayId: DayId; label: string; gaps: ScheduleGap[] }
+  | { type: "empty"; key: string; dayId: DayId; label: string; message: string };
 
 interface CombinedTimetableViewProps {
   days: FestivalDay[];
@@ -22,6 +23,9 @@ interface CombinedTimetableViewProps {
   showStages: boolean;
   freeTimeOnly?: boolean;
   getStagesForDay: (dayId: DayId) => FestivalStage[];
+  freeTimeNotes?: FreeTimeNoteMap;
+  onFreeTimeNoteChange?: (noteKey: string, value: string) => void;
+  canEditFreeTimeNotes?: boolean;
 }
 
 const formatRange = (start: number, end: number) => `${minutesToTime(start)} - ${minutesToTime(end)}`;
@@ -33,6 +37,9 @@ export const CombinedTimetableView = ({
   showStages,
   freeTimeOnly = false,
   getStagesForDay,
+  freeTimeNotes = {},
+  onFreeTimeNoteChange,
+  canEditFreeTimeNotes = false,
 }: CombinedTimetableViewProps) => {
   const scheduleByDay = new Map(schedules.map((schedule) => [schedule.dayId, schedule]));
 
@@ -46,6 +53,7 @@ export const CombinedTimetableView = ({
           {
             type: "empty" as const,
             key: `${day.id}-empty`,
+            dayId: day.id,
             label: "Timeline",
             message: "No schedule for this day.",
           },
@@ -62,6 +70,7 @@ export const CombinedTimetableView = ({
           rows.push({
             type: "stage",
             key: `${day.id}-${stage.id}`,
+            dayId: day.id,
             label: stage.shortName,
             stage,
             items,
@@ -74,6 +83,7 @@ export const CombinedTimetableView = ({
       rows.push({
         type: "solo",
         key: `${day.id}-timeline`,
+        dayId: day.id,
         label: "Timeline",
         items: schedule.attending,
         gaps: schedule.gaps,
@@ -84,6 +94,7 @@ export const CombinedTimetableView = ({
       rows.push({
         type: "free",
         key: `${day.id}-free`,
+        dayId: day.id,
         label: "Free",
         gaps: schedule.gaps,
       });
@@ -93,6 +104,7 @@ export const CombinedTimetableView = ({
       rows.push({
         type: "empty",
         key: `${day.id}-empty`,
+        dayId: day.id,
         label: freeTimeOnly ? "Free" : "Timeline",
         message: freeTimeOnly ? "No free time gaps on this day." : "No artists selected for this day.",
       });
@@ -157,14 +169,48 @@ export const CombinedTimetableView = ({
     );
   };
 
-  const renderGapBlock = (gap: ScheduleGap, key: string) => {
+  const renderGapBlock = (dayId: DayId, gap: ScheduleGap, key: string) => {
     const left = minsToX(gap.start);
     const width = Math.max(minsToX(gap.end) - left - 2, 30);
-    const label = `${formatDuration(gap.end - gap.start)} free`;
+    const noteKey = getFreeTimeNoteKey(dayId, gap.start, gap.end);
+    const note = freeTimeNotes[noteKey] ?? "";
+    const durationLabel = `${formatDuration(gap.end - gap.start)} free`;
+    const label = note || durationLabel;
+    const canEditInline = canEditFreeTimeNotes && onFreeTimeNoteChange && width > 140;
+    const canPromptEdit = canEditFreeTimeNotes && onFreeTimeNoteChange && width <= 140;
+    const promptForNote = () => {
+      if (!onFreeTimeNoteChange) {
+        return;
+      }
+
+      const next = window.prompt("Free time note", note);
+      if (next !== null) {
+        onFreeTimeNoteChange(noteKey, next);
+      }
+    };
 
     return (
       <div key={key} className="tt-gap" style={{ left, width }} title={`${label} - ${formatRange(gap.start, gap.end)}`}>
-        {width > 55 && <span>{label}</span>}
+        {canEditInline ? (
+          <input
+            className="tt-gap-note-input"
+            value={note}
+            placeholder={durationLabel}
+            onChange={(event) => onFreeTimeNoteChange(noteKey, event.target.value)}
+            onClick={(event) => event.stopPropagation()}
+          />
+        ) : canPromptEdit ? (
+          <button
+            className="tt-gap-note-button"
+            type="button"
+            onClick={promptForNote}
+            title="Edit free time note"
+          >
+            {width > 55 ? label : "+"}
+          </button>
+        ) : (
+          width > 55 && <span>{label}</span>
+        )}
       </div>
     );
   };
@@ -186,10 +232,10 @@ export const CombinedTimetableView = ({
         {row.type === "solo" && (
           <>
             {row.items.map(renderArtistBlock)}
-            {row.gaps.map((gap, index) => renderGapBlock(gap, `${row.key}-gap-${index}`))}
+            {row.gaps.map((gap, index) => renderGapBlock(row.dayId, gap, `${row.key}-gap-${index}`))}
           </>
         )}
-        {row.type === "free" && row.gaps.map((gap, index) => renderGapBlock(gap, `${row.key}-gap-${index}`))}
+        {row.type === "free" && row.gaps.map((gap, index) => renderGapBlock(row.dayId, gap, `${row.key}-gap-${index}`))}
       </div>
     );
   };

@@ -1,4 +1,13 @@
-import type { AccountSession, ClashDecisionMap, FestivalExport, GroupClashVoteMap, Intent, IntentMap } from "../types";
+import type {
+  AccountSession,
+  ClashDecisionMap,
+  FestivalExport,
+  FreeTimeNoteMap,
+  GroupClashVoteMap,
+  GroupFreeTimeNoteMap,
+  Intent,
+  IntentMap,
+} from "../types";
 
 const storageKeys = {
   intents: "download-clash-finder:intents",
@@ -8,6 +17,8 @@ const storageKeys = {
   clashDecisions: "download-clash-finder:clash-decisions",
   groupClashVotes: "download-clash-finder:group-clash-votes",
   groupClashVotesByCode: "download-clash-finder:group-clash-votes-by-code",
+  freeTimeNotes: "download-clash-finder:free-time-notes",
+  groupFreeTimeNotesByCode: "download-clash-finder:group-free-time-notes-by-code",
   groupCode: "download-clash-finder:group-code",
   groupCodes: "download-clash-finder:group-codes",
   groupMemberId: "download-clash-finder:group-member-id",
@@ -82,6 +93,23 @@ export const loadGroupClashVotesByCode = (
 
 export const saveGroupClashVotesByCode = (value: GroupClashVoteMap) => {
   window.localStorage.setItem(storageKeys.groupClashVotesByCode, JSON.stringify(value));
+};
+
+export const loadFreeTimeNotes = (): FreeTimeNoteMap =>
+  parseJson<FreeTimeNoteMap>(window.localStorage.getItem(storageKeys.freeTimeNotes), {});
+
+export const saveFreeTimeNotes = (value: FreeTimeNoteMap) => {
+  window.localStorage.setItem(storageKeys.freeTimeNotes, JSON.stringify(value));
+};
+
+export const loadGroupFreeTimeNotesByCode = (): GroupFreeTimeNoteMap =>
+  parseJson<GroupFreeTimeNoteMap>(
+    window.localStorage.getItem(storageKeys.groupFreeTimeNotesByCode),
+    {},
+  );
+
+export const saveGroupFreeTimeNotesByCode = (value: GroupFreeTimeNoteMap) => {
+  window.localStorage.setItem(storageKeys.groupFreeTimeNotesByCode, JSON.stringify(value));
 };
 
 export const loadGroupCode = () =>

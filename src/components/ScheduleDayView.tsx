@@ -1,8 +1,8 @@
 import type { CSSProperties } from "react";
 import { festivalStages, getDay } from "../data/lineup";
-import type { FestivalStage } from "../types";
+import type { FestivalStage, FreeTimeNoteMap } from "../types";
 import type { ScheduleDay, ScheduleGap, TimedArtist } from "../utils/schedule";
-import { getDirectStageTransfers, getStageLabel, getStageTransferText, getSupportText } from "../utils/schedule";
+import { getDirectStageTransfers, getFreeTimeNoteKey, getStageLabel, getStageTransferText, getSupportText } from "../utils/schedule";
 import { formatDuration, minutesToTime } from "../utils/time";
 
 type ScheduleSegment =
@@ -21,6 +21,9 @@ interface ScheduleDayViewProps {
   showStages?: boolean;
   freeTimeOnly?: boolean;
   stages?: FestivalStage[];
+  freeTimeNotes?: FreeTimeNoteMap;
+  onFreeTimeNoteChange?: (noteKey: string, value: string) => void;
+  canEditFreeTimeNotes?: boolean;
 }
 
 export type ScheduleViewMode = "list" | "timetable";
@@ -90,6 +93,9 @@ export const ScheduleDayView = ({
   showStages = false,
   freeTimeOnly = false,
   stages = festivalStages,
+  freeTimeNotes = {},
+  onFreeTimeNoteChange,
+  canEditFreeTimeNotes = false,
 }: ScheduleDayViewProps) => {
   const day = getDay(schedule.dayId);
   const directTransfers = getDirectStageTransfers(schedule.attending);
@@ -123,6 +129,48 @@ export const ScheduleDayView = ({
 
   // When freeTimeOnly, only render gap segments
   const activeSegments = freeTimeOnly ? segments.filter((s) => s.type === "gap") : segments;
+  const getGapNoteKey = (gap: ScheduleGap) => getFreeTimeNoteKey(schedule.dayId, gap.start, gap.end);
+  const getGapNote = (gap: ScheduleGap) => freeTimeNotes[getGapNoteKey(gap)] ?? "";
+  const renderGapNoteInput = (gap: ScheduleGap, className = "") => {
+    if (!canEditFreeTimeNotes || !onFreeTimeNoteChange) {
+      return null;
+    }
+
+    return (
+      <label className={`free-time-note-field${className ? ` ${className}` : ""}`}>
+        <span>Free time note</span>
+        <input
+          value={getGapNote(gap)}
+          placeholder="Add note e.g. Food Break"
+          onChange={(event) => onFreeTimeNoteChange(getGapNoteKey(gap), event.target.value)}
+          onClick={(event) => event.stopPropagation()}
+        />
+      </label>
+    );
+  };
+  const renderGapNotePromptButton = (gap: ScheduleGap) => {
+    if (!canEditFreeTimeNotes || !onFreeTimeNoteChange) {
+      return null;
+    }
+
+    const note = getGapNote(gap);
+
+    return (
+      <button
+        className="timetable-gap-note-button"
+        type="button"
+        onClick={(event) => {
+          event.stopPropagation();
+          const next = window.prompt("Free time note", note);
+          if (next !== null) {
+            onFreeTimeNoteChange(getGapNoteKey(gap), next);
+          }
+        }}
+      >
+        {note ? "Edit" : "+"}
+      </button>
+    );
+  };
 
   const renderList = () => (
     <div className="itinerary-list">
@@ -147,11 +195,16 @@ export const ScheduleDayView = ({
         }
         const gap = segment.item;
         const duration = formatDuration(gap.end - gap.start);
+        const note = getGapNote(gap);
         return (
           <article className="itinerary-item itinerary-item--gap" key={segment.key}>
             <div className="itinerary-time">{formatRange(gap.start, gap.end)}</div>
             <div>
-              <h3>{duration} free</h3>
+              <div className="free-time-note-heading">
+                <h3>{note || `${duration} free`}</h3>
+                {note && <span>{duration} free</span>}
+              </div>
+              {renderGapNoteInput(gap)}
               <div className="gap-mini-grid">
                 {gap.comingFrom && (
                   <p>
@@ -257,6 +310,7 @@ export const ScheduleDayView = ({
               );
             }
             const gap = segment.item;
+            const note = getGapNote(gap);
             return (
               <article
                 className={`timetable-block timetable-block--gap${compactClass}`}
@@ -264,9 +318,13 @@ export const ScheduleDayView = ({
                 style={{ top: `${top}px`, height: `${height}px` }}
               >
                 <div className="timetable-block__main">
-                  <strong>{formatDuration(gap.end - gap.start)} free</strong>
+                  <strong>{note || `${formatDuration(gap.end - gap.start)} free`}</strong>
                   <span>{formatRange(gap.start, gap.end)}</span>
+                  {note && <em>{formatDuration(gap.end - gap.start)} free</em>}
                 </div>
+                {duration >= 30
+                  ? renderGapNoteInput(gap, "free-time-note-field--timetable")
+                  : renderGapNotePromptButton(gap)}
               </article>
             );
           })}
@@ -298,13 +356,19 @@ export const ScheduleDayView = ({
         <div className="staged-free-row">
           <div className="staged-free-row__label">Free</div>
           <div className="staged-free-row__items">
-            {schedule.gaps.map((gap) => (
-              <article className="staged-free-chip" key={`staged-gap-${schedule.dayId}-${gap.start}-${gap.end}`}>
-                <strong>{formatDuration(gap.end - gap.start)} free</strong>
-                <span>{formatRange(gap.start, gap.end)}</span>
-                {getStageTransferText(gap) && <em>{getStageTransferText(gap)}</em>}
-              </article>
-            ))}
+            {schedule.gaps.map((gap) => {
+              const note = getGapNote(gap);
+
+              return (
+                <article className="staged-free-chip" key={`staged-gap-${schedule.dayId}-${gap.start}-${gap.end}`}>
+                  <strong>{note || `${formatDuration(gap.end - gap.start)} free`}</strong>
+                  <span>{formatRange(gap.start, gap.end)}</span>
+                  {note && <em>{formatDuration(gap.end - gap.start)} free</em>}
+                  {getStageTransferText(gap) && <em>{getStageTransferText(gap)}</em>}
+                  {renderGapNoteInput(gap, "free-time-note-field--chip")}
+                </article>
+              );
+            })}
           </div>
         </div>
       ) : null;

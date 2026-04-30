@@ -162,6 +162,13 @@ const AppRoutes = () => {
               setTimes={festivalState.setTimes}
               clashDecisions={festivalState.clashDecisions}
               onIntentChange={festivalState.setArtistIntent}
+              profileName={festivalState.profileName}
+              accountUsername={festivalState.account?.username}
+              imports={festivalState.imports}
+              syncedImports={festivalState.syncedImports}
+              groupClashVotes={festivalState.groupClashVotes}
+              groupCode={festivalState.groupCode}
+              myGroupRole={festivalState.myGroupRole}
               includeDistrictX={includeDistrictX}
             />
           }
@@ -173,6 +180,8 @@ const AppRoutes = () => {
               intents={festivalState.intents}
               setTimes={festivalState.setTimes}
               clashDecisions={festivalState.clashDecisions}
+              freeTimeNotes={festivalState.freeTimeNotes}
+              onFreeTimeNoteChange={festivalState.setFreeTimeNote}
               includeDistrictX={includeDistrictX}
             />
           }
@@ -215,6 +224,8 @@ const AppRoutes = () => {
               myGroupRole={festivalState.myGroupRole}
               onRemoveGroupMember={festivalState.removeGroupMember}
               onSetGroupMemberRole={festivalState.setGroupMemberRole}
+              freeTimeNotes={festivalState.freeTimeNotes}
+              groupFreeTimeNotes={festivalState.groupFreeTimeNotes}
               includeDistrictX={includeDistrictX}
             />
           }
@@ -231,6 +242,9 @@ const AppRoutes = () => {
               syncedImports={festivalState.syncedImports}
               groupClashVotes={festivalState.groupClashVotes}
               groupCode={festivalState.groupCode}
+              myGroupRole={festivalState.myGroupRole}
+              groupFreeTimeNotes={festivalState.groupFreeTimeNotes}
+              onGroupFreeTimeNoteChange={festivalState.setGroupFreeTimeNote}
               includeDistrictX={includeDistrictX}
             />
           }

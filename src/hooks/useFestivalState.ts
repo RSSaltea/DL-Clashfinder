@@ -4,7 +4,9 @@ import type {
   AccountSession,
   ClashDecisionMap,
   FestivalExport,
+  FreeTimeNoteMap,
   GroupClashVoteMap,
+  GroupFreeTimeNoteMap,
   Intent,
   IntentMap,
   SetTimeMap,
@@ -40,15 +42,19 @@ import {
   loadGroupClashVotes,
   loadGroupClashVotesByCode,
   loadGroupMemberId,
+  loadGroupFreeTimeNotesByCode,
   loadImports,
+  loadFreeTimeNotes,
   loadIntentMap,
   loadProfileName,
   saveAccountSession,
   saveClashDecisions,
+  saveFreeTimeNotes,
   saveGroupCode,
   saveGroupCodes,
   saveGroupClashVotes,
   saveGroupClashVotesByCode,
+  saveGroupFreeTimeNotesByCode,
   saveImports,
   saveIntentMap,
   saveProfileName,
@@ -74,19 +80,40 @@ const emptyAccountPlan = (profileName = "Me"): AccountPlan => ({
   imports: [],
   clashDecisions: {},
   groupClashVotesByCode: {},
+  freeTimeNotes: {},
+  groupFreeTimeNotesByCode: {},
   groupCode: "",
   groupCodes: [],
 });
 
 const hasAccountPlanContent = (plan: AccountPlan | null | undefined) =>
   Boolean(plan && (
-    Object.keys(plan.intents).length > 0 ||
-    plan.imports.length > 0 ||
-    Object.keys(plan.clashDecisions).length > 0 ||
-    Object.keys(plan.groupClashVotesByCode).length > 0 ||
-    plan.groupCodes.length > 0 ||
+    Object.keys(plan.intents ?? {}).length > 0 ||
+    (plan.imports ?? []).length > 0 ||
+    Object.keys(plan.clashDecisions ?? {}).length > 0 ||
+    Object.keys(plan.groupClashVotesByCode ?? {}).length > 0 ||
+    Object.keys(plan.freeTimeNotes ?? {}).length > 0 ||
+    Object.keys(plan.groupFreeTimeNotesByCode ?? {}).length > 0 ||
+    (plan.groupCodes ?? []).length > 0 ||
     plan.groupCode
   ));
+
+const mergeGroupFreeTimeNoteMaps = (
+  remote: GroupFreeTimeNoteMap = {},
+  local: GroupFreeTimeNoteMap = {},
+): GroupFreeTimeNoteMap => {
+  const groupCodes = new Set([...Object.keys(remote), ...Object.keys(local)]);
+  const merged: GroupFreeTimeNoteMap = {};
+
+  groupCodes.forEach((code) => {
+    merged[code] = {
+      ...(remote[code] ?? {}),
+      ...(local[code] ?? {}),
+    };
+  });
+
+  return merged;
+};
 
 const mergeAccountPlans = (remotePlan: AccountPlan | null, localPlan: AccountPlan): AccountPlan => {
   const remote = remotePlan ?? emptyAccountPlan(localPlan.profileName);
@@ -95,22 +122,30 @@ const mergeAccountPlans = (remotePlan: AccountPlan | null, localPlan: AccountPla
     version: 1,
     profileName: localPlan.profileName || remote.profileName || "Me",
     intents: {
-      ...remote.intents,
-      ...localPlan.intents,
+      ...(remote.intents ?? {}),
+      ...(localPlan.intents ?? {}),
     },
-    imports: localPlan.imports.length > 0 ? localPlan.imports : remote.imports,
+    imports: (localPlan.imports ?? []).length > 0 ? localPlan.imports : remote.imports ?? [],
     clashDecisions: {
-      ...remote.clashDecisions,
-      ...localPlan.clashDecisions,
+      ...(remote.clashDecisions ?? {}),
+      ...(localPlan.clashDecisions ?? {}),
     },
     groupClashVotesByCode: {
-      ...remote.groupClashVotesByCode,
-      ...localPlan.groupClashVotesByCode,
+      ...(remote.groupClashVotesByCode ?? {}),
+      ...(localPlan.groupClashVotesByCode ?? {}),
     },
+    freeTimeNotes: {
+      ...(remote.freeTimeNotes ?? {}),
+      ...(localPlan.freeTimeNotes ?? {}),
+    },
+    groupFreeTimeNotesByCode: mergeGroupFreeTimeNoteMaps(
+      remote.groupFreeTimeNotesByCode ?? {},
+      localPlan.groupFreeTimeNotesByCode ?? {},
+    ),
     groupCode: localPlan.groupCode || remote.groupCode || "",
     groupCodes: Array.from(new Set([
-      ...remote.groupCodes,
-      ...localPlan.groupCodes,
+      ...(remote.groupCodes ?? []),
+      ...(localPlan.groupCodes ?? []),
       remote.groupCode,
       localPlan.groupCode,
     ].filter(Boolean))),
@@ -123,6 +158,7 @@ export const useFestivalState = () => {
   const [imports, setImportsState] = useState<FestivalExport[]>(() => loadImports());
   const [syncedImports, setSyncedImports] = useState<FestivalExport[]>([]);
   const [clashDecisions, setClashDecisions] = useState<ClashDecisionMap>(() => loadClashDecisions());
+  const [freeTimeNotes, setFreeTimeNotes] = useState<FreeTimeNoteMap>(() => loadFreeTimeNotes());
   const [account, setAccount] = useState<AccountSession | null>(() => loadAccountSession());
   const [accountReady, setAccountReady] = useState(() => !loadAccountSession());
   const [groupCode, setGroupCodeState] = useState(() => loadGroupCode());
@@ -130,6 +166,9 @@ export const useFestivalState = () => {
   const [groupCodes, setGroupCodes] = useState<string[]>(() => loadGroupCodes(loadGroupCode()));
   const [groupClashVotesByCode, setGroupClashVotesByCode] = useState<GroupClashVoteMap>(() =>
     loadGroupClashVotesByCode(loadGroupCode(), loadGroupClashVotes()),
+  );
+  const [groupFreeTimeNotesByCode, setGroupFreeTimeNotesByCode] = useState<GroupFreeTimeNoteMap>(() =>
+    loadGroupFreeTimeNotesByCode(),
   );
   const [groupSyncState, setGroupSyncState] = useState<GroupSyncState>(() => getInitialGroupSyncState());
   const [groupMembers, setGroupMembers] = useState<GroupMemberInfo[]>([]);
@@ -144,6 +183,10 @@ export const useFestivalState = () => {
     () => (groupCode ? groupClashVotesByCode[groupCode] ?? {} : {}),
     [groupClashVotesByCode, groupCode],
   );
+  const groupFreeTimeNotes = useMemo(
+    () => (groupCode ? groupFreeTimeNotesByCode[groupCode] ?? {} : {}),
+    [groupFreeTimeNotesByCode, groupCode],
+  );
 
   const getLocalAccountPlan = useCallback((): AccountPlan => ({
     version: 1,
@@ -152,9 +195,21 @@ export const useFestivalState = () => {
     imports,
     clashDecisions,
     groupClashVotesByCode,
+    freeTimeNotes,
+    groupFreeTimeNotesByCode,
     groupCode,
     groupCodes,
-  }), [clashDecisions, groupClashVotesByCode, groupCode, groupCodes, imports, intents, profileName]);
+  }), [
+    clashDecisions,
+    freeTimeNotes,
+    groupClashVotesByCode,
+    groupCode,
+    groupCodes,
+    groupFreeTimeNotesByCode,
+    imports,
+    intents,
+    profileName,
+  ]);
 
   const applyAccountPlan = useCallback((plan: AccountPlan) => {
     setProfileNameState(plan.profileName || "Me");
@@ -162,6 +217,8 @@ export const useFestivalState = () => {
     setImportsState(plan.imports ?? []);
     setClashDecisions(plan.clashDecisions ?? {});
     setGroupClashVotesByCode(plan.groupClashVotesByCode ?? {});
+    setFreeTimeNotes(plan.freeTimeNotes ?? {});
+    setGroupFreeTimeNotesByCode(plan.groupFreeTimeNotesByCode ?? {});
     setGroupCodeState(plan.groupCode ?? "");
     setGroupCodeDraftState(plan.groupCode ?? "");
     setGroupCodes(plan.groupCodes ?? []);
@@ -234,9 +291,17 @@ export const useFestivalState = () => {
   }, [clashDecisions]);
 
   useEffect(() => {
+    saveFreeTimeNotes(freeTimeNotes);
+  }, [freeTimeNotes]);
+
+  useEffect(() => {
     saveGroupClashVotesByCode(groupClashVotesByCode);
     saveGroupClashVotes(groupClashVotes);
   }, [groupClashVotes, groupClashVotesByCode]);
+
+  useEffect(() => {
+    saveGroupFreeTimeNotesByCode(groupFreeTimeNotesByCode);
+  }, [groupFreeTimeNotesByCode]);
 
   useEffect(() => {
     saveGroupCode(groupCode);
@@ -367,6 +432,43 @@ export const useFestivalState = () => {
     });
   };
 
+  const setFreeTimeNote = (noteKey: string, value: string) => {
+    setFreeTimeNotes((current) => {
+      const next = { ...current };
+      const note = value.trim();
+
+      if (note) {
+        next[noteKey] = note;
+      } else {
+        delete next[noteKey];
+      }
+
+      return next;
+    });
+  };
+
+  const setGroupFreeTimeNote = (noteKey: string, value: string) => {
+    if (!groupCode) {
+      return;
+    }
+
+    setGroupFreeTimeNotesByCode((current) => {
+      const nextNotes = { ...(current[groupCode] ?? {}) };
+      const note = value.trim();
+
+      if (note) {
+        nextNotes[noteKey] = note;
+      } else {
+        delete nextNotes[noteKey];
+      }
+
+      return {
+        ...current,
+        [groupCode]: nextNotes,
+      };
+    });
+  };
+
   const setGroupCodeDraft = (value: string) => {
     setGroupCodeDraftState(normaliseGroupCode(value));
   };
@@ -430,6 +532,7 @@ export const useFestivalState = () => {
 
     try {
       const votesForGroup = groupClashVotesByCode[currentGroupCode] ?? {};
+      const notesForGroup = groupFreeTimeNotesByCode[currentGroupCode] ?? {};
       const payload = createExportPayload(
         profileName,
         intents,
@@ -438,6 +541,8 @@ export const useFestivalState = () => {
         currentGroupCode,
         votesForGroup,
         account?.username ?? "",
+        freeTimeNotes,
+        notesForGroup,
       );
 
       await pushGroupPlan(currentGroupCode, activeMemberId, payload);
@@ -479,7 +584,9 @@ export const useFestivalState = () => {
     account?.username,
     groupCode,
     groupClashVotesByCode,
+    groupFreeTimeNotesByCode,
     activeMemberId,
+    freeTimeNotes,
     intents,
     profileName,
     setTimes,
@@ -527,13 +634,17 @@ export const useFestivalState = () => {
   return {
     intents,
     clashDecisions,
+    freeTimeNotes,
     groupClashVotes,
+    groupFreeTimeNotes,
     groupMembers,
     myGroupRole,
     activeMemberId,
     selectedArtistIds,
     setClashDecision,
     setGroupClashVote,
+    setFreeTimeNote,
+    setGroupFreeTimeNote,
     setArtistIntent,
     setIntents,
     setProfileName: setProfileNameState,

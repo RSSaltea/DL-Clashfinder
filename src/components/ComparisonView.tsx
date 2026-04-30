@@ -1,7 +1,7 @@
 import { Cloud, Crown, Download, FileJson, RefreshCw, Shield, Trash2, Upload, UserMinus } from "lucide-react";
 import { ChangeEvent, KeyboardEvent, useMemo, useState } from "react";
 import { getDaySortIndex, getFestivalDays, getLineup } from "../data/lineup";
-import type { Artist, ClashDecisionMap, FestivalExport, IntentMap, ProfilePlan, SetTimeMap } from "../types";
+import type { Artist, ClashDecisionMap, FestivalExport, FreeTimeNoteMap, IntentMap, ProfilePlan, SetTimeMap } from "../types";
 import { createExportPayload, downloadJson } from "../utils/export";
 import type { GroupMemberInfo, GroupMemberRole, GroupSyncState } from "../utils/groupSync";
 import { getClashVoteSummary, getGroupClashDecisionMap } from "../utils/groupVotes";
@@ -9,10 +9,12 @@ import { parseImportedPlan } from "../utils/import";
 import { loadFreeTimeWindow } from "../utils/localStorage";
 import {
   buildScheduleDay,
+  getFreeTimeNoteKey,
   getGroupArtists,
   getStageLabel,
   getSupportMap,
   getSupportText,
+  mergeGroupFreeTimeNotes,
 } from "../utils/schedule";
 import { getAllClashes } from "../utils/clash";
 import { formatDuration, getEffectiveTime, minutesToTime, timeToMinutes, windowEndToMins } from "../utils/time";
@@ -40,6 +42,8 @@ interface ComparisonViewProps {
   myGroupRole: GroupMemberRole;
   onRemoveGroupMember: (memberId: string) => Promise<void>;
   onSetGroupMemberRole: (memberId: string, role: "admin" | "member") => Promise<void>;
+  freeTimeNotes: FreeTimeNoteMap;
+  groupFreeTimeNotes: FreeTimeNoteMap;
   includeDistrictX: boolean;
 }
 
@@ -83,6 +87,8 @@ export const ComparisonView = ({
   myGroupRole,
   onRemoveGroupMember,
   onSetGroupMemberRole,
+  freeTimeNotes,
+  groupFreeTimeNotes,
   includeDistrictX,
 }: ComparisonViewProps) => {
   const [error, setError] = useState("");
@@ -129,7 +135,7 @@ export const ComparisonView = ({
 
   const profiles = useMemo<ProfilePlan[]>(
     () => [
-      { id: "local", name: profileName || "Me", accountUsername, intents, setTimes, groupClashVotes, groupCode },
+      { id: "local", name: profileName || "Me", accountUsername, intents, setTimes, groupClashVotes, groupCode, groupFreeTimeNotes, groupRole: myGroupRole },
       ...syncedImports.map((item, index) => ({
         id: `synced-${item.profileName}-${index}`,
         name: item.profileName,
@@ -138,6 +144,8 @@ export const ComparisonView = ({
         setTimes: item.setTimes,
         groupClashVotes: item.groupClashVotes,
         groupCode: item.groupCode,
+        groupFreeTimeNotes: item.groupFreeTimeNotes,
+        groupRole: item.groupRole,
       })),
       ...imports.map((item, index) => ({
         id: `imported-${item.profileName}-${index}`,
@@ -147,9 +155,11 @@ export const ComparisonView = ({
         setTimes: item.setTimes,
         groupClashVotes: item.groupClashVotes,
         groupCode: item.groupCode,
+        groupFreeTimeNotes: item.groupFreeTimeNotes,
+        groupRole: item.groupRole,
       })),
     ],
-    [accountUsername, groupClashVotes, groupCode, imports, intents, profileName, setTimes, syncedImports],
+    [accountUsername, groupClashVotes, groupCode, groupFreeTimeNotes, imports, intents, myGroupRole, profileName, setTimes, syncedImports],
   );
 
   const combinedSetTimes = useMemo(
@@ -158,6 +168,7 @@ export const ComparisonView = ({
   );
 
   const supportMap = useMemo(() => getSupportMap(profiles), [profiles]);
+  const mergedGroupFreeTimeNotes = useMemo(() => mergeGroupFreeTimeNotes(profiles), [profiles]);
 
   const groupRows = useMemo<GroupRow[]>(() => {
     return Array.from(supportMap.entries())
@@ -254,6 +265,8 @@ export const ComparisonView = ({
       groupCode,
       groupClashVotes,
       accountUsername,
+      freeTimeNotes,
+      groupFreeTimeNotes,
     ));
   };
 
@@ -612,6 +625,7 @@ export const ComparisonView = ({
                   {schedule.gaps.map((gap) => {
                     const endLabel = gap.end === 1440 ? "00:00" : minutesToTime(gap.end);
                     const duration = formatDuration(gap.end - gap.start);
+                    const note = mergedGroupFreeTimeNotes[getFreeTimeNoteKey(day.id, gap.start, gap.end)] ?? "";
 
                     return (
                       <div className="gap-card" key={`${day.id}-${gap.start}-${gap.end}`}>
@@ -626,7 +640,7 @@ export const ComparisonView = ({
                         )}
                         <div className="gap-card__header">
                           <strong>{minutesToTime(gap.start)} - {endLabel}</strong>
-                          <span>{duration} free</span>
+                          <span>{note || `${duration} free`}</span>
                         </div>
                         {gap.playing.length === 0 ? (
                           <p className="muted" style={{ fontSize: "0.9rem" }}>Nobody else playing during this gap.</p>

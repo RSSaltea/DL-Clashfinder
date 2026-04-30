@@ -1,10 +1,10 @@
-import type { FestivalExport } from "../types";
+import type { FestivalExport, GroupMemberRole } from "../types";
 import { parseFestivalExport } from "./import";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL?.replace(/\/+$/, "") ?? "";
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY ?? "";
 
-export type GroupMemberRole = "leader" | "admin" | "member";
+export type { GroupMemberRole };
 
 export interface GroupMemberInfo {
   memberId: string;
@@ -139,6 +139,7 @@ export const pullGroupPlans = async (
     .map((row) => ({
       ...parseFestivalExport(row.payload, row.profile_name || "Synced plan"),
       groupCode: normalisedGroupCode,
+      groupRole: row.role,
     }));
 
   return { plans, members, myRole };
