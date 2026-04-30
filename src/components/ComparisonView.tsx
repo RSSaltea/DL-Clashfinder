@@ -492,7 +492,7 @@ export const ComparisonView = ({
             <p className="muted">Mark artists first, then the group ranking appears here.</p>
           ) : (
             <div className="compact-list">
-              {groupRows.slice(0, 16).map((row) => (
+              {groupRows.map((row) => (
                 <div key={row.artist.id}>
                   <strong>{row.artist.name}</strong>
                   <span>
